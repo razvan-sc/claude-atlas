@@ -7,7 +7,7 @@ import pytest
 
 from atlas.config import AtlasConfig
 from atlas.graphql_client import AtlasGraphQLClient
-from atlas.server import _get_project_impl, _get_projects_impl
+from atlas.server import _archive_project_impl, _get_project_impl, _get_projects_impl
 
 
 @pytest.fixture
@@ -105,5 +105,77 @@ class TestGetProjects:
         transport = httpx.MockTransport(handler)
         async with AtlasGraphQLClient(config, transport=transport) as client:
             result = await _get_projects_impl(client, ["bad-id"])
+
+        assert result.startswith("Error:")
+
+
+class TestArchiveProject:
+    """Tests for archive_project tool."""
+
+    @pytest.mark.asyncio
+    async def test_archive_sends_correct_mutation(self, config):
+        captured_body = {}
+        response = {
+            "data": {
+                "project": {
+                    "projects_edit": {
+                        "key": "PROJ-1",
+                        "name": "My Project",
+                        "state": {"value": "ARCHIVED"},
+                    }
+                }
+            }
+        }
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            captured_body.update(json.loads(request.content))
+            return httpx.Response(200, json=response)
+
+        transport = httpx.MockTransport(handler)
+        async with AtlasGraphQLClient(config, transport=transport) as client:
+            result = await _archive_project_impl(client, "proj-123", archive=True)
+
+        parsed = json.loads(result)
+        assert parsed["name"] == "My Project"
+        assert parsed["state"] == "ARCHIVED"
+        assert captured_body["variables"]["input"]["archived"] is True
+
+    @pytest.mark.asyncio
+    async def test_unarchive_sends_correct_mutation(self, config):
+        captured_body = {}
+        response = {
+            "data": {
+                "project": {
+                    "projects_edit": {
+                        "key": "PROJ-1",
+                        "name": "My Project",
+                        "state": {"value": "ACTIVE"},
+                    }
+                }
+            }
+        }
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            captured_body.update(json.loads(request.content))
+            return httpx.Response(200, json=response)
+
+        transport = httpx.MockTransport(handler)
+        async with AtlasGraphQLClient(config, transport=transport) as client:
+            result = await _archive_project_impl(client, "proj-123", archive=False)
+
+        parsed = json.loads(result)
+        assert parsed["state"] == "ACTIVE"
+        assert captured_body["variables"]["input"]["archived"] is False
+
+    @pytest.mark.asyncio
+    async def test_error_returns_error_string(self, config):
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={
+                "errors": [{"message": "Project not found"}],
+            })
+
+        transport = httpx.MockTransport(handler)
+        async with AtlasGraphQLClient(config, transport=transport) as client:
+            result = await _archive_project_impl(client, "bad-id", archive=True)
 
         assert result.startswith("Error:")
