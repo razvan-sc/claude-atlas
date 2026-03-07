@@ -1,7 +1,6 @@
 ---
-name: Atlas Projects
+name: atlas-projects
 description: List and browse your Atlassian Atlas projects
-trigger: /atlas:projects
 ---
 
 # Atlas Projects

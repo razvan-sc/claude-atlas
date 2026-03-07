@@ -1,7 +1,6 @@
 ---
-name: Atlas Status
+name: atlas-status
 description: View the latest status, risks, and highlights for an Atlas project
-trigger: /atlas:status
 ---
 
 # Atlas Project Status
@@ -10,7 +9,7 @@ Show the latest status update, risks, and highlights for a specific Atlas projec
 
 ## Workflow
 
-1. Check if a project ID or key was provided as an argument (e.g., the user typed `/atlas:status PROJ-123`). If not, ask the user: "Which project would you like to check? Please provide the project ID."
+1. Check if a project ID or key was provided as an argument (e.g., the user typed `/atlas-status PROJ-123`). If not, ask the user: "Which project would you like to check? Please provide the project ID."
 
 2. Call the `get_project_updates` MCP tool with the project ID.
 

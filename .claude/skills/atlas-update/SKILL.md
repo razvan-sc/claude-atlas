@@ -1,7 +1,6 @@
 ---
-name: Atlas Update
+name: atlas-update
 description: Compose and post a status update to an Atlas project
-trigger: /atlas:update
 ---
 
 # Atlas Status Update
