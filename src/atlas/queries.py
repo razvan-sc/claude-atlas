@@ -47,3 +47,39 @@ query projects_byIds($ids: [ID!]!) {
   }
 }
 """
+
+GET_PROJECT_UPDATES_QUERY = """
+query GetProjectUpdates($projectId: ID!) {
+  project {
+    projects_byId(id: $projectId) {
+      updates {
+        edges {
+          node {
+            summary
+            status {
+              value
+            }
+            targetDate
+            createdAt
+          }
+        }
+      }
+      risks {
+        edges {
+          node {
+            summary
+            resolved
+          }
+        }
+      }
+      highlights {
+        edges {
+          node {
+            summary
+          }
+        }
+      }
+    }
+  }
+}
+"""
