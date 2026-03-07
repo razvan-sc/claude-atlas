@@ -26,9 +26,9 @@
 
 ### Skills
 
-- [ ] **SKIL-01**: `/atlas:projects` skill lists and filters user's projects
-- [ ] **SKIL-02**: `/atlas:status` skill shows latest status for a given project
-- [ ] **SKIL-03**: `/atlas:update` skill posts a status update interactively
+- [x] **SKIL-01**: `/atlas:projects` skill lists and filters user's projects
+- [x] **SKIL-02**: `/atlas:status` skill shows latest status for a given project
+- [x] **SKIL-03**: `/atlas:update` skill posts a status update interactively
 
 ## v2 Requirements
 
@@ -72,9 +72,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UPDT-02 | Phase 2 | Complete |
 | UPDT-03 | Phase 2 | Complete |
 | UPDT-04 | Phase 2 | Complete |
-| SKIL-01 | Phase 3 | Pending |
-| SKIL-02 | Phase 3 | Pending |
-| SKIL-03 | Phase 3 | Pending |
+| SKIL-01 | Phase 3 | Complete |
+| SKIL-02 | Phase 3 | Complete |
+| SKIL-03 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 13 total
