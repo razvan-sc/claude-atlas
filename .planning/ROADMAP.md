@@ -26,10 +26,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User can create ~/.atlas/config.json with email, API token, and subdomain, and the server reads it
   2. MCP server starts and Claude Code discovers it with its registered tools
   3. Server can execute a raw GraphQL query against the Atlas API and return a result
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Project scaffold, config loader, GraphQL client, and MCP server with tool registration
 
 ### Phase 2: Atlas Tools
 **Goal**: Users can read and manage their Atlas projects and status updates through MCP tools
@@ -65,6 +65,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/? | Not started | - |
+| 1. Foundation | 0/1 | Not started | - |
 | 2. Atlas Tools | 0/? | Not started | - |
 | 3. Skills | 0/? | Not started | - |
