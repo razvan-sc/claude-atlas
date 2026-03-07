@@ -13,6 +13,7 @@ class AtlasConfig:
     email: str
     api_token: str
     subdomain: str
+    cloud_id: str = ""
 
     @property
     def base_url(self) -> str:
@@ -24,6 +25,16 @@ class AtlasConfig:
         """Return the Basic auth header value."""
         credentials = f"{self.email}:{self.api_token}".encode()
         return f"Basic {base64.b64encode(credentials).decode()}"
+
+    @property
+    def container_ari(self) -> str:
+        """Return the ARI used as containerId for project searches."""
+        return f"ari:cloud:townsquare::site/{self.cloud_id}"
+
+    @property
+    def hostname(self) -> str:
+        """Return the full Atlassian hostname."""
+        return f"{self.subdomain}.atlassian.net"
 
 
 _REQUIRED_FIELDS = ("email", "api_token", "subdomain")
@@ -61,4 +72,5 @@ def load_config(path: Path | None = None) -> AtlasConfig:
         email=data["email"],
         api_token=data["api_token"],
         subdomain=data["subdomain"],
+        cloud_id=data.get("cloud_id", ""),
     )

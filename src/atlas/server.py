@@ -13,6 +13,8 @@ from atlas.queries import (
     GET_PROJECT_QUERY,
     GET_PROJECT_UPDATES_QUERY,
     GET_PROJECTS_QUERY,
+    LIST_PROJECTS_QUERY,
+    TENANT_CONTEXT_QUERY,
 )
 
 mcp = FastMCP("atlas")
@@ -20,25 +22,41 @@ mcp = FastMCP("atlas")
 
 def _format_project(raw: dict[str, Any]) -> dict[str, Any]:
     """Flatten a raw GraphQL project response into a readable dict."""
-    contributors = [
+    members = [
         edge["node"]["name"]
-        for edge in raw.get("contributors", {}).get("edges", [])
+        for edge in raw.get("members", {}).get("edges", [])
     ]
+    description = raw.get("description")
+    desc_text = description.get("what") if description else None
+    owner = raw.get("owner")
+    due_date = raw.get("dueDate")
     return {
         "key": raw.get("key"),
         "name": raw.get("name"),
-        "description": raw.get("description"),
+        "description": desc_text,
         "state": raw.get("state", {}).get("value") if raw.get("state") else None,
-        "targetDate": raw.get("targetDate"),
-        "contributors": contributors,
+        "dueDate": due_date.get("label") if due_date else None,
+        "owner": owner.get("name") if owner else None,
+        "members": members,
     }
+
+
+async def _resolve_cloud_id(client: AtlasGraphQLClient, hostname: str) -> str:
+    """Resolve the cloud ID for an Atlassian hostname."""
+    result = await client.execute(
+        TENANT_CONTEXT_QUERY, {"hostNames": [hostname]}
+    )
+    contexts = result["data"]["tenantContexts"]
+    if not contexts:
+        raise RuntimeError(f"No tenant context found for {hostname}")
+    return contexts[0]["cloudId"]
 
 
 async def _get_project_impl(client: AtlasGraphQLClient, project_id: str) -> str:
     """Fetch a single project by ID and return formatted JSON."""
     try:
-        result = await client.execute(GET_PROJECT_QUERY, {"id": project_id})
-        raw = result["data"]["project"]["projects_byId"]
+        result = await client.execute(GET_PROJECT_QUERY, {"projectId": project_id})
+        raw = result["data"]["projects_byId"]
         return json.dumps(_format_project(raw), indent=2)
     except Exception as e:
         return f"Error: {type(e).__name__}: {e}"
@@ -47,8 +65,8 @@ async def _get_project_impl(client: AtlasGraphQLClient, project_id: str) -> str:
 async def _get_projects_impl(client: AtlasGraphQLClient, project_ids: list[str]) -> str:
     """Fetch multiple projects by IDs and return formatted JSON array."""
     try:
-        result = await client.execute(GET_PROJECTS_QUERY, {"ids": project_ids})
-        raw_list = result["data"]["project"]["projects_byIds"]
+        result = await client.execute(GET_PROJECTS_QUERY, {"projectIds": project_ids})
+        raw_list = result["data"]["projects_byIds"]
         return json.dumps([_format_project(p) for p in raw_list], indent=2)
     except Exception as e:
         return f"Error: {type(e).__name__}: {e}"
@@ -61,9 +79,9 @@ async def _archive_project_impl(
     try:
         result = await client.execute(
             EDIT_PROJECT_MUTATION,
-            {"projectId": project_id, "input": {"archived": archive}},
+            {"input": {"id": project_id, "archived": archive}},
         )
-        raw = result["data"]["project"]["projects_edit"]
+        raw = result["data"]["projects_edit"]
         action = "Archived" if archive else "Unarchived"
         return json.dumps(
             {
@@ -103,10 +121,10 @@ async def atlas_graphql_query(query: str, variables: str = "{}") -> str:
 async def get_project(project_id: str) -> str:
     """Get details of a single Atlas project by ID.
 
-    Returns project name, description, state, target date, and contributors.
+    Returns project name, description, state, due date, owner, and members.
 
     Args:
-        project_id: The Atlas project ID
+        project_id: The Atlas project ID (ARI format)
 
     Returns:
         JSON string with project details
@@ -121,10 +139,10 @@ async def get_projects(project_ids: list[str]) -> str:
     """Get details of multiple Atlas projects by their IDs.
 
     Returns an array of project details including name, description, state,
-    target date, and contributors for each project.
+    due date, owner, and members for each project.
 
     Args:
-        project_ids: List of Atlas project IDs
+        project_ids: List of Atlas project IDs (ARI format)
 
     Returns:
         JSON string with array of project details
@@ -135,11 +153,47 @@ async def get_projects(project_ids: list[str]) -> str:
 
 
 @mcp.tool()
+async def list_projects(limit: int = 50) -> str:
+    """List all non-archived Atlas projects for the authenticated user.
+
+    Returns projects sorted by most recently updated. Each project includes
+    its ID, key, name, description, state, due date, owner, and members.
+
+    Args:
+        limit: Maximum number of projects to return (default: 50)
+
+    Returns:
+        JSON string with array of project details
+    """
+    config = load_config()
+    async with AtlasGraphQLClient(config) as client:
+        try:
+            cloud_id = config.cloud_id
+            if not cloud_id:
+                cloud_id = await _resolve_cloud_id(client, config.hostname)
+
+            container_ari = f"ari:cloud:townsquare::site/{cloud_id}"
+            result = await client.execute(
+                LIST_PROJECTS_QUERY, {"first": limit, "containerId": container_ari}
+            )
+            edges = result["data"]["projects_search"]["edges"]
+            projects = []
+            for edge in edges:
+                p = edge["node"]
+                formatted = _format_project(p)
+                formatted["id"] = p.get("id")
+                projects.append(formatted)
+            return json.dumps(projects, indent=2)
+        except Exception as e:
+            return f"Error: {type(e).__name__}: {e}"
+
+
+@mcp.tool()
 async def archive_project(project_id: str, archive: bool = True) -> str:
     """Archive or unarchive an Atlas project. Set archive=False to unarchive.
 
     Args:
-        project_id: The Atlas project ID
+        project_id: The Atlas project ID (ARI format)
         archive: True to archive, False to unarchive (default: True)
 
     Returns:
@@ -151,29 +205,22 @@ async def archive_project(project_id: str, archive: bool = True) -> str:
 
 
 async def _get_project_updates_impl(client: AtlasGraphQLClient, project_id: str) -> str:
-    """Fetch status updates, risks, and highlights for a project."""
+    """Fetch status updates and highlights for a project."""
     try:
         result = await client.execute(
             GET_PROJECT_UPDATES_QUERY, {"projectId": project_id}
         )
-        raw = result["data"]["project"]["projects_byId"]
+        raw = result["data"]["projects_byId"]
 
         updates = [
             {
                 "summary": edge["node"]["summary"],
-                "status": edge["node"]["status"]["value"]
-                if edge["node"].get("status")
+                "status": edge["node"]["newState"]["value"]
+                if edge["node"].get("newState")
                 else None,
-                "targetDate": edge["node"].get("targetDate"),
-                "createdAt": edge["node"].get("createdAt"),
+                "createdAt": edge["node"].get("creationDate"),
             }
             for edge in raw.get("updates", {}).get("edges", [])
-        ]
-
-        risks = [
-            {"summary": edge["node"]["summary"]}
-            for edge in raw.get("risks", {}).get("edges", [])
-            if not edge["node"].get("resolved", False)
         ]
 
         highlights = [
@@ -185,7 +232,6 @@ async def _get_project_updates_impl(client: AtlasGraphQLClient, project_id: str)
             {
                 "projectId": project_id,
                 "updates": updates,
-                "risks": risks,
                 "highlights": highlights,
             },
             indent=2,
@@ -196,16 +242,16 @@ async def _get_project_updates_impl(client: AtlasGraphQLClient, project_id: str)
 
 @mcp.tool()
 async def get_project_updates(project_id: str) -> str:
-    """Get status updates, risks, and highlights for an Atlas project.
+    """Get status updates and highlights for an Atlas project.
 
-    Returns the latest status updates with summary, status, target date,
-    unresolved risks, and highlights/learnings.
+    Returns the latest status updates with summary, status, creation date,
+    and highlights/learnings.
 
     Args:
-        project_id: The Atlas project ID
+        project_id: The Atlas project ID (ARI format)
 
     Returns:
-        JSON string with updates, risks, and highlights
+        JSON string with updates and highlights
     """
     config = load_config()
     async with AtlasGraphQLClient(config) as client:
@@ -215,7 +261,7 @@ async def get_project_updates(project_id: str) -> str:
 # Expose impl for testing
 get_project_updates._impl = _get_project_updates_impl
 
-_VALID_STATUSES = {"ON_TRACK", "AT_RISK", "OFF_TRACK", "DONE"}
+_VALID_STATUSES = {"on_track", "at_risk", "off_track", "done", "paused", "pending", "cancelled"}
 
 
 async def _create_project_update_impl(
@@ -234,9 +280,10 @@ async def _create_project_update_impl(
             )
 
         highlights_list = json.loads(highlights)
-        highlight_inputs = [{"summary": h} for h in highlights_list]
+        highlight_inputs = [{"summary": h, "description": "", "type": "LEARNING"} for h in highlights_list]
 
         mutation_input: dict[str, Any] = {
+            "projectId": project_id,
             "summary": summary,
             "status": status,
         }
@@ -245,16 +292,16 @@ async def _create_project_update_impl(
 
         result = await client.execute(
             CREATE_UPDATE_MUTATION,
-            {"projectId": project_id, "input": mutation_input},
+            {"input": mutation_input},
         )
-        raw = result["data"]["project"]["projects_createUpdate"]
+        raw = result["data"]["projects_createUpdate"]
 
         return json.dumps(
             {
                 "created": True,
                 "summary": raw["summary"],
-                "status": raw["status"]["value"] if raw.get("status") else None,
-                "createdAt": raw.get("createdAt"),
+                "status": raw["newState"]["value"] if raw.get("newState") else None,
+                "createdAt": raw.get("creationDate"),
             },
             indent=2,
         )
@@ -266,19 +313,19 @@ async def _create_project_update_impl(
 async def create_project_update(
     project_id: str,
     summary: str,
-    status: str = "ON_TRACK",
+    status: str = "on_track",
     highlights: str = "[]",
 ) -> str:
     """Post a new status update to an Atlas project.
 
-    Status values: ON_TRACK, AT_RISK, OFF_TRACK, DONE.
+    Status values: on_track, at_risk, off_track, done, paused, pending, cancelled.
     Highlights is a JSON string list of highlight summaries,
     e.g. '["Shipped feature X", "Completed migration"]'.
 
     Args:
-        project_id: The Atlas project ID
+        project_id: The Atlas project ID (ARI format)
         summary: Status update summary text
-        status: Project status (ON_TRACK, AT_RISK, OFF_TRACK, DONE)
+        status: Project status (on_track, at_risk, off_track, done, paused, pending, cancelled)
         highlights: JSON string list of highlight summaries (default: "[]")
 
     Returns:

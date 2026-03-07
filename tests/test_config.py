@@ -21,6 +21,14 @@ class TestAtlasConfig:
         expected = "Basic " + base64.b64encode(b"user@example.com:tok123").decode()
         assert config.auth_header == expected
 
+    def test_container_ari_uses_cloud_id(self):
+        config = AtlasConfig(email="user@example.com", api_token="tok123", subdomain="mysite", cloud_id="abc-123")
+        assert config.container_ari == "ari:cloud:townsquare::site/abc-123"
+
+    def test_hostname(self):
+        config = AtlasConfig(email="user@example.com", api_token="tok123", subdomain="mysite")
+        assert config.hostname == "mysite.atlassian.net"
+
 
 class TestLoadConfig:
     """Tests for the load_config function."""
