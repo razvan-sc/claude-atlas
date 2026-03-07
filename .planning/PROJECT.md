@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Claude Code integration for Atlassian Atlas Projects, providing both an MCP server and slash command skills. It lets users manage Atlas projects, read and write status updates, and filter projects — all from within Claude Code conversations.
+A Claude Code integration for Atlassian Atlas Projects, providing an MCP server (6 tools) and 3 slash command skills. Users manage Atlas projects, read and write status updates, and filter projects — all from within Claude Code conversations.
 
 ## Core Value
 
@@ -12,24 +12,25 @@ Users can interact with their Atlas Projects directly from Claude Code without s
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ MCP server exposing Atlas Projects GraphQL API as tools — v1.0
+- ✓ Slash command skills for common Atlas workflows — v1.0
+- ✓ List and filter projects (by status, name, etc.) — v1.0
+- ✓ Read project details and status updates (risks, highlights) — v1.0
+- ✓ Write/post project status updates with summary, status, highlights — v1.0
+- ✓ Edit existing projects (archive/unarchive) — v1.0
+- ✓ Config file authentication (~/.atlas/config.json with email + API token) — v1.0
+- ✓ Single Atlassian instance configuration — v1.0
 
 ### Active
 
-- [ ] MCP server exposing Atlas Projects GraphQL API as tools
-- [ ] Slash command skills for common Atlas workflows
-- [ ] List and filter projects (by status, name, etc.)
-- [ ] Read project details and status updates (risks, highlights)
-- [ ] Write/post project status updates with summary, risks, highlights
-- [ ] Create new projects with initial settings
-- [ ] Edit existing projects (archive/unarchive, update properties)
-- [ ] Config file authentication (~/.atlas/config.json with email + API token)
-- [ ] Single Atlassian instance configuration
+- [ ] Create new projects with name and target date
+- [ ] Search/list all projects without knowing IDs
 - [ ] First-run setup flow for credentials
+- [ ] Edit existing status updates
 
 ### Out of Scope
 
-- Multiple Atlassian instance support — single instance sufficient for v1
+- Multiple Atlassian instance support — single instance sufficient
 - OAuth authentication — API token approach is simpler and sufficient
 - Atlas Goals API integration — focus on Projects API only
 - Real-time notifications/webhooks — polling/on-demand only
@@ -37,12 +38,10 @@ Users can interact with their Atlas Projects directly from Claude Code without s
 
 ## Context
 
-- Atlassian Atlas Projects uses a GraphQL API at `https://{subdomain}.atlassian.net/gateway/api/graphql`
-- Authentication is Basic Auth with email:api_token, BASE64 encoded
-- API reference: https://developer.atlassian.com/platform/projects/projects-graphql-api/using-projects-graphql-api/
-- Key GraphQL operations: `projects_byId`, `projects_byIds`, `projects_create`, `projects_createUpdate`, `projects_edit`
-- MCP server built in Python using the `mcp` SDK
-- Slash commands built as Claude Code skills (markdown workflow files)
+- Shipped v1.0 with 541 LOC Python, 592 LOC tests, 156 LOC skills
+- Tech stack: Python MCP server (FastMCP + httpx), Claude Code skill files
+- 6 MCP tools registered, 3 slash commands, 27 unit tests
+- Known tech debt: skill error messages reference wrong env var names
 
 ## Constraints
 
@@ -55,11 +54,13 @@ Users can interact with their Atlas Projects directly from Claude Code without s
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| MCP server + slash commands | MCP gives tool access in any conversation; skills give optimized workflows | — Pending |
-| Python for MCP server | User preference, good mcp SDK support | — Pending |
-| Config file for auth | Persist credentials between sessions, don't leak into env | — Pending |
-| Single instance | Simpler config, user only needs one org | — Pending |
-| GraphQL over REST | Only API available for Atlas Projects | — Pending |
+| MCP server + slash commands | MCP gives tool access in any conversation; skills give optimized workflows | ✓ Good |
+| Python for MCP server | User preference, good mcp SDK support | ✓ Good |
+| Config file for auth | Persist credentials between sessions, don't leak into env | ✓ Good |
+| Single instance | Simpler config, user only needs one org | ✓ Good |
+| GraphQL over REST | Only API available for Atlas Projects | ✓ Good |
+| httpx MockTransport for testing | Isolates GraphQL client tests without mocking internals | ✓ Good |
+| Tools return error strings not exceptions | MCP tools catch all exceptions and return readable error messages | ✓ Good |
 
 ---
-*Last updated: 2026-03-07 after initialization*
+*Last updated: 2026-03-07 after v1.0 milestone*
