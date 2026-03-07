@@ -18,21 +18,22 @@ def config():
 def _make_project_response(project_data, *, single=True):
     """Build a mock GraphQL response for project queries."""
     if single:
-        return {"data": {"project": {"projects_byId": project_data}}}
-    return {"data": {"project": {"projects_byIds": project_data}}}
+        return {"data": {"projects_byId": project_data}}
+    return {"data": {"projects_byIds": project_data}}
 
 
 def _sample_project(name="My Project", key="PROJ-1"):
     return {
         "key": key,
         "name": name,
-        "description": "A test project",
-        "state": {"value": "ACTIVE"},
-        "targetDate": "2026-06-01",
-        "contributors": {
+        "description": {"what": "A test project", "why": "Testing"},
+        "state": {"value": "on_track"},
+        "dueDate": {"label": "Jun 2026", "confidence": "MONTH"},
+        "owner": {"name": "Alice", "accountId": "acc-1"},
+        "members": {
             "edges": [
-                {"node": {"name": "Alice", "aaid": "aaid-1"}},
-                {"node": {"name": "Bob", "aaid": "aaid-2"}},
+                {"node": {"name": "Alice", "accountId": "acc-1"}},
+                {"node": {"name": "Bob", "accountId": "acc-2"}},
             ]
         },
     }
@@ -56,9 +57,10 @@ class TestGetProject:
         parsed = json.loads(result)
         assert parsed["name"] == "My Project"
         assert parsed["description"] == "A test project"
-        assert parsed["state"] == "ACTIVE"
-        assert parsed["targetDate"] == "2026-06-01"
-        assert parsed["contributors"] == ["Alice", "Bob"]
+        assert parsed["state"] == "on_track"
+        assert parsed["dueDate"] == "Jun 2026"
+        assert parsed["owner"] == "Alice"
+        assert parsed["members"] == ["Alice", "Bob"]
 
     @pytest.mark.asyncio
     async def test_error_returns_error_string(self, config):
@@ -93,7 +95,7 @@ class TestGetProjects:
         assert len(parsed) == 2
         assert parsed[0]["name"] == "Proj A"
         assert parsed[1]["name"] == "Proj B"
-        assert parsed[0]["contributors"] == ["Alice", "Bob"]
+        assert parsed[0]["members"] == ["Alice", "Bob"]
 
     @pytest.mark.asyncio
     async def test_error_returns_error_string(self, config):
@@ -117,12 +119,10 @@ class TestArchiveProject:
         captured_body = {}
         response = {
             "data": {
-                "project": {
-                    "projects_edit": {
-                        "key": "PROJ-1",
-                        "name": "My Project",
-                        "state": {"value": "ARCHIVED"},
-                    }
+                "projects_edit": {
+                    "key": "PROJ-1",
+                    "name": "My Project",
+                    "state": {"value": "archived"},
                 }
             }
         }
@@ -137,7 +137,7 @@ class TestArchiveProject:
 
         parsed = json.loads(result)
         assert parsed["name"] == "My Project"
-        assert parsed["state"] == "ARCHIVED"
+        assert parsed["state"] == "archived"
         assert captured_body["variables"]["input"]["archived"] is True
 
     @pytest.mark.asyncio
@@ -145,12 +145,10 @@ class TestArchiveProject:
         captured_body = {}
         response = {
             "data": {
-                "project": {
-                    "projects_edit": {
-                        "key": "PROJ-1",
-                        "name": "My Project",
-                        "state": {"value": "ACTIVE"},
-                    }
+                "projects_edit": {
+                    "key": "PROJ-1",
+                    "name": "My Project",
+                    "state": {"value": "on_track"},
                 }
             }
         }
@@ -164,7 +162,7 @@ class TestArchiveProject:
             result = await _archive_project_impl(client, "proj-123", archive=False)
 
         parsed = json.loads(result)
-        assert parsed["state"] == "ACTIVE"
+        assert parsed["state"] == "on_track"
         assert captured_body["variables"]["input"]["archived"] is False
 
     @pytest.mark.asyncio

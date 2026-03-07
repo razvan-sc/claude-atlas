@@ -1,22 +1,30 @@
 """GraphQL query and mutation strings for Atlas project operations."""
 
 GET_PROJECT_QUERY = """
-query projects_byId($id: ID!) {
-  project {
-    projects_byId(id: $id) {
-      key
+query projects_byId($projectId: String!) {
+  projects_byId(projectId: $projectId) {
+    key
+    name
+    description {
+      what
+      why
+    }
+    state {
+      value
+    }
+    dueDate {
+      label
+      confidence
+    }
+    owner {
       name
-      description
-      state {
-        value
-      }
-      targetDate
-      contributors {
-        edges {
-          node {
-            name
-            aaid
-          }
+      accountId
+    }
+    members {
+      edges {
+        node {
+          accountId
+          name
         }
       }
     }
@@ -25,22 +33,30 @@ query projects_byId($id: ID!) {
 """
 
 GET_PROJECTS_QUERY = """
-query projects_byIds($ids: [ID!]!) {
-  project {
-    projects_byIds(ids: $ids) {
-      key
+query projects_byIds($projectIds: [String!]!) {
+  projects_byIds(projectIds: $projectIds) {
+    key
+    name
+    description {
+      what
+      why
+    }
+    state {
+      value
+    }
+    dueDate {
+      label
+      confidence
+    }
+    owner {
       name
-      description
-      state {
-        value
-      }
-      targetDate
-      contributors {
-        edges {
-          node {
-            name
-            aaid
-          }
+      accountId
+    }
+    members {
+      edges {
+        node {
+          accountId
+          name
         }
       }
     }
@@ -49,65 +65,99 @@ query projects_byIds($ids: [ID!]!) {
 """
 
 EDIT_PROJECT_MUTATION = """
-mutation projects_edit($projectId: ID!, $input: ProjectEditInput!) {
-  project {
-    projects_edit(projectId: $projectId, input: $input) {
-      key
-      name
-      state {
-        value
-      }
+mutation projects_edit($input: TownsquareProjectsEditInput) {
+  projects_edit(input: $input) {
+    key
+    name
+    state {
+      value
     }
   }
 }
 """
 
 CREATE_UPDATE_MUTATION = """
-mutation projects_createUpdate($projectId: ID!, $input: ProjectUpdateInput!) {
-  project {
-    projects_createUpdate(projectId: $projectId, input: $input) {
-      summary
-      status {
-        value
+mutation projects_createUpdate($input: TownsquareProjectsCreateUpdateInput) {
+  projects_createUpdate(input: $input) {
+    summary
+    newState {
+      value
+    }
+    creationDate
+  }
+}
+"""
+
+LIST_PROJECTS_QUERY = """
+query ListProjects($first: Int, $containerId: String!) {
+  projects_search(
+    searchString: ""
+    containerId: $containerId
+    first: $first
+    sort: [LATEST_UPDATE_DATE_DESC]
+  ) {
+    edges {
+      node {
+        id
+        key
+        name
+        description {
+          what
+        }
+        state {
+          value
+        }
+        dueDate {
+          label
+        }
+        owner {
+          name
+          accountId
+        }
+        members {
+          edges {
+            node {
+              name
+              accountId
+            }
+          }
+        }
       }
-      createdAt
     }
   }
 }
 """
 
 GET_PROJECT_UPDATES_QUERY = """
-query GetProjectUpdates($projectId: ID!) {
-  project {
-    projects_byId(id: $projectId) {
-      updates {
-        edges {
-          node {
-            summary
-            status {
-              value
-            }
-            targetDate
-            createdAt
+query GetProjectUpdates($projectId: String!) {
+  projects_byId(projectId: $projectId) {
+    updates @optIn(to: "Townsquare") {
+      edges {
+        node {
+          summary
+          newState {
+            value
           }
-        }
-      }
-      risks {
-        edges {
-          node {
-            summary
-            resolved
-          }
-        }
-      }
-      highlights {
-        edges {
-          node {
-            summary
-          }
+          creationDate
         }
       }
     }
+    highlights {
+      edges {
+        node {
+          summary
+        }
+      }
+    }
+  }
+}
+"""
+
+TENANT_CONTEXT_QUERY = """
+query GetTenantContext($hostNames: [String!]!) {
+  tenantContexts(hostNames: $hostNames) {
+    orgId
+    cloudId
   }
 }
 """
