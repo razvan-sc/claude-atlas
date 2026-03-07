@@ -48,6 +48,20 @@ query projects_byIds($ids: [ID!]!) {
 }
 """
 
+EDIT_PROJECT_MUTATION = """
+mutation projects_edit($projectId: ID!, $input: ProjectEditInput!) {
+  project {
+    projects_edit(projectId: $projectId, input: $input) {
+      key
+      name
+      state {
+        value
+      }
+    }
+  }
+}
+"""
+
 GET_PROJECT_UPDATES_QUERY = """
 query GetProjectUpdates($projectId: ID!) {
   project {

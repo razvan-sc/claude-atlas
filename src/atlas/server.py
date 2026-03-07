@@ -7,7 +7,12 @@ from mcp.server.fastmcp import FastMCP
 
 from atlas.config import load_config
 from atlas.graphql_client import AtlasGraphQLClient
-from atlas.queries import GET_PROJECT_QUERY, GET_PROJECT_UPDATES_QUERY, GET_PROJECTS_QUERY
+from atlas.queries import (
+    EDIT_PROJECT_MUTATION,
+    GET_PROJECT_QUERY,
+    GET_PROJECT_UPDATES_QUERY,
+    GET_PROJECTS_QUERY,
+)
 
 mcp = FastMCP("atlas")
 
@@ -44,6 +49,30 @@ async def _get_projects_impl(client: AtlasGraphQLClient, project_ids: list[str])
         result = await client.execute(GET_PROJECTS_QUERY, {"ids": project_ids})
         raw_list = result["data"]["project"]["projects_byIds"]
         return json.dumps([_format_project(p) for p in raw_list], indent=2)
+    except Exception as e:
+        return f"Error: {type(e).__name__}: {e}"
+
+
+async def _archive_project_impl(
+    client: AtlasGraphQLClient, project_id: str, *, archive: bool = True
+) -> str:
+    """Archive or unarchive a project and return confirmation."""
+    try:
+        result = await client.execute(
+            EDIT_PROJECT_MUTATION,
+            {"projectId": project_id, "input": {"archived": archive}},
+        )
+        raw = result["data"]["project"]["projects_edit"]
+        action = "Archived" if archive else "Unarchived"
+        return json.dumps(
+            {
+                "action": action,
+                "key": raw.get("key"),
+                "name": raw.get("name"),
+                "state": raw.get("state", {}).get("value") if raw.get("state") else None,
+            },
+            indent=2,
+        )
     except Exception as e:
         return f"Error: {type(e).__name__}: {e}"
 
@@ -102,6 +131,22 @@ async def get_projects(project_ids: list[str]) -> str:
     config = load_config()
     async with AtlasGraphQLClient(config) as client:
         return await _get_projects_impl(client, project_ids)
+
+
+@mcp.tool()
+async def archive_project(project_id: str, archive: bool = True) -> str:
+    """Archive or unarchive an Atlas project. Set archive=False to unarchive.
+
+    Args:
+        project_id: The Atlas project ID
+        archive: True to archive, False to unarchive (default: True)
+
+    Returns:
+        JSON string with confirmation of the action
+    """
+    config = load_config()
+    async with AtlasGraphQLClient(config) as client:
+        return await _archive_project_impl(client, project_id, archive=archive)
 
 
 async def _get_project_updates_impl(client: AtlasGraphQLClient, project_id: str) -> str:
