@@ -43,7 +43,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Project query tools (get_project, get_projects) and archive/unarchive mutation
+- [x] 02-01-PLAN.md — Project query tools (get_project, get_projects) and archive/unarchive mutation
 - [ ] 02-02-PLAN.md — Status update tools (get_project_updates, create_project_update)
 
 ### Phase 3: Skills
@@ -67,5 +67,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete    | 2026-03-07 |
-| 2. Atlas Tools | 0/2 | Not started | - |
+| 2. Atlas Tools | 1/2 | In progress | - |
 | 3. Skills | 0/? | Not started | - |

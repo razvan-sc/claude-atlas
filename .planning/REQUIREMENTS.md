@@ -13,9 +13,9 @@
 
 ### Projects
 
-- [ ] **PROJ-01**: User can query a single project by ID (name, description, contributors, due date)
-- [ ] **PROJ-02**: User can query multiple projects by IDs in a single request
-- [ ] **PROJ-03**: User can archive/unarchive a project
+- [x] **PROJ-01**: User can query a single project by ID (name, description, contributors, due date)
+- [x] **PROJ-02**: User can query multiple projects by IDs in a single request
+- [x] **PROJ-03**: User can archive/unarchive a project
 
 ### Updates
 
@@ -65,9 +65,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
-| PROJ-01 | Phase 2 | Pending |
-| PROJ-02 | Phase 2 | Pending |
-| PROJ-03 | Phase 2 | Pending |
+| PROJ-01 | Phase 2 | Complete |
+| PROJ-02 | Phase 2 | Complete |
+| PROJ-03 | Phase 2 | Complete |
 | UPDT-01 | Phase 2 | Pending |
 | UPDT-02 | Phase 2 | Pending |
 | UPDT-03 | Phase 2 | Pending |
