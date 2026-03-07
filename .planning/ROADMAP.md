@@ -29,7 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold, config loader, GraphQL client, and MCP server with tool registration
+- [x] 01-01-PLAN.md — Project scaffold, config loader, GraphQL client, and MCP server with tool registration
 
 ### Phase 2: Atlas Tools
 **Goal**: Users can read and manage their Atlas projects and status updates through MCP tools
@@ -40,10 +40,11 @@ Plans:
   2. User can ask Claude for the latest status update on a project including summary, status, risks, and highlights
   3. User can ask Claude to post a new status update and it appears in Atlas
   4. User can ask Claude to archive or unarchive a project and the change is reflected in Atlas
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Project query tools (get_project, get_projects) and archive/unarchive mutation
+- [ ] 02-02-PLAN.md — Status update tools (get_project_updates, create_project_update)
 
 ### Phase 3: Skills
 **Goal**: Users have optimized slash command workflows for their most common Atlas tasks
@@ -66,5 +67,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete    | 2026-03-07 |
-| 2. Atlas Tools | 0/? | Not started | - |
+| 2. Atlas Tools | 0/2 | Not started | - |
 | 3. Skills | 0/? | Not started | - |
