@@ -44,7 +44,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Project query tools (get_project, get_projects) and archive/unarchive mutation
-- [ ] 02-02-PLAN.md — Status update tools (get_project_updates, create_project_update)
+- [x] 02-02-PLAN.md — Status update tools (get_project_updates, create_project_update)
 
 ### Phase 3: Skills
 **Goal**: Users have optimized slash command workflows for their most common Atlas tasks
@@ -54,10 +54,10 @@ Plans:
   1. User can run /atlas:projects and see a filtered list of their projects
   2. User can run /atlas:status with a project reference and see its latest status details
   3. User can run /atlas:update and interactively compose and post a status update
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Claude Code skills for /atlas:projects, /atlas:status, and /atlas:update slash commands
 
 ## Progress
 
@@ -68,4 +68,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete    | 2026-03-07 |
 | 2. Atlas Tools | 2/2 | Complete   | 2026-03-07 |
-| 3. Skills | 0/? | Not started | - |
+| 3. Skills | 0/1 | Not started | - |
