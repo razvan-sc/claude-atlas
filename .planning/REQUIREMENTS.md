@@ -7,9 +7,9 @@
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: Config file at ~/.atlas/config.json stores email, API token, and subdomain
-- [ ] **INFRA-02**: Python MCP server with GraphQL client using Basic Auth against `https://{subdomain}.atlassian.net/gateway/api/graphql`
-- [ ] **INFRA-03**: MCP server registers all Atlas tools for Claude Code discovery
+- [x] **INFRA-01**: Config file at ~/.atlas/config.json stores email, API token, and subdomain
+- [x] **INFRA-02**: Python MCP server with GraphQL client using Basic Auth against `https://{subdomain}.atlassian.net/gateway/api/graphql`
+- [x] **INFRA-03**: MCP server registers all Atlas tools for Claude Code discovery
 
 ### Projects
 
@@ -62,9 +62,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
-| INFRA-03 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
+| INFRA-02 | Phase 1 | Complete |
+| INFRA-03 | Phase 1 | Complete |
 | PROJ-01 | Phase 2 | Pending |
 | PROJ-02 | Phase 2 | Pending |
 | PROJ-03 | Phase 2 | Pending |
