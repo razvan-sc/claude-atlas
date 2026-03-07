@@ -7,7 +7,7 @@ from mcp.server.fastmcp import FastMCP
 
 from atlas.config import load_config
 from atlas.graphql_client import AtlasGraphQLClient
-from atlas.queries import GET_PROJECT_QUERY, GET_PROJECTS_QUERY
+from atlas.queries import GET_PROJECT_QUERY, GET_PROJECT_UPDATES_QUERY, GET_PROJECTS_QUERY
 
 mcp = FastMCP("atlas")
 
@@ -102,6 +102,72 @@ async def get_projects(project_ids: list[str]) -> str:
     config = load_config()
     async with AtlasGraphQLClient(config) as client:
         return await _get_projects_impl(client, project_ids)
+
+
+async def _get_project_updates_impl(client: AtlasGraphQLClient, project_id: str) -> str:
+    """Fetch status updates, risks, and highlights for a project."""
+    try:
+        result = await client.execute(
+            GET_PROJECT_UPDATES_QUERY, {"projectId": project_id}
+        )
+        raw = result["data"]["project"]["projects_byId"]
+
+        updates = [
+            {
+                "summary": edge["node"]["summary"],
+                "status": edge["node"]["status"]["value"]
+                if edge["node"].get("status")
+                else None,
+                "targetDate": edge["node"].get("targetDate"),
+                "createdAt": edge["node"].get("createdAt"),
+            }
+            for edge in raw.get("updates", {}).get("edges", [])
+        ]
+
+        risks = [
+            {"summary": edge["node"]["summary"]}
+            for edge in raw.get("risks", {}).get("edges", [])
+            if not edge["node"].get("resolved", False)
+        ]
+
+        highlights = [
+            {"summary": edge["node"]["summary"]}
+            for edge in raw.get("highlights", {}).get("edges", [])
+        ]
+
+        return json.dumps(
+            {
+                "projectId": project_id,
+                "updates": updates,
+                "risks": risks,
+                "highlights": highlights,
+            },
+            indent=2,
+        )
+    except Exception as e:
+        return f"Error: {type(e).__name__}: {e}"
+
+
+@mcp.tool()
+async def get_project_updates(project_id: str) -> str:
+    """Get status updates, risks, and highlights for an Atlas project.
+
+    Returns the latest status updates with summary, status, target date,
+    unresolved risks, and highlights/learnings.
+
+    Args:
+        project_id: The Atlas project ID
+
+    Returns:
+        JSON string with updates, risks, and highlights
+    """
+    config = load_config()
+    async with AtlasGraphQLClient(config) as client:
+        return await _get_project_updates_impl(client, project_id)
+
+
+# Expose impl for testing
+get_project_updates._impl = _get_project_updates_impl
 
 
 def main() -> None:
