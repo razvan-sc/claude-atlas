@@ -62,6 +62,20 @@ mutation projects_edit($projectId: ID!, $input: ProjectEditInput!) {
 }
 """
 
+CREATE_UPDATE_MUTATION = """
+mutation projects_createUpdate($projectId: ID!, $input: ProjectUpdateInput!) {
+  project {
+    projects_createUpdate(projectId: $projectId, input: $input) {
+      summary
+      status {
+        value
+      }
+      createdAt
+    }
+  }
+}
+"""
+
 GET_PROJECT_UPDATES_QUERY = """
 query GetProjectUpdates($projectId: ID!) {
   project {

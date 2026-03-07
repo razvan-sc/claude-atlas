@@ -8,6 +8,7 @@ from mcp.server.fastmcp import FastMCP
 from atlas.config import load_config
 from atlas.graphql_client import AtlasGraphQLClient
 from atlas.queries import (
+    CREATE_UPDATE_MUTATION,
     EDIT_PROJECT_MUTATION,
     GET_PROJECT_QUERY,
     GET_PROJECT_UPDATES_QUERY,
@@ -213,6 +214,85 @@ async def get_project_updates(project_id: str) -> str:
 
 # Expose impl for testing
 get_project_updates._impl = _get_project_updates_impl
+
+_VALID_STATUSES = {"ON_TRACK", "AT_RISK", "OFF_TRACK", "DONE"}
+
+
+async def _create_project_update_impl(
+    client: AtlasGraphQLClient,
+    project_id: str,
+    summary: str,
+    status: str,
+    highlights: str,
+) -> str:
+    """Post a new status update to a project."""
+    try:
+        if status not in _VALID_STATUSES:
+            return (
+                f"Error: ValueError: Invalid status '{status}'. "
+                f"Must be one of: {', '.join(sorted(_VALID_STATUSES))}"
+            )
+
+        highlights_list = json.loads(highlights)
+        highlight_inputs = [{"summary": h} for h in highlights_list]
+
+        mutation_input: dict[str, Any] = {
+            "summary": summary,
+            "status": status,
+        }
+        if highlight_inputs:
+            mutation_input["highlights"] = highlight_inputs
+
+        result = await client.execute(
+            CREATE_UPDATE_MUTATION,
+            {"projectId": project_id, "input": mutation_input},
+        )
+        raw = result["data"]["project"]["projects_createUpdate"]
+
+        return json.dumps(
+            {
+                "created": True,
+                "summary": raw["summary"],
+                "status": raw["status"]["value"] if raw.get("status") else None,
+                "createdAt": raw.get("createdAt"),
+            },
+            indent=2,
+        )
+    except Exception as e:
+        return f"Error: {type(e).__name__}: {e}"
+
+
+@mcp.tool()
+async def create_project_update(
+    project_id: str,
+    summary: str,
+    status: str = "ON_TRACK",
+    highlights: str = "[]",
+) -> str:
+    """Post a new status update to an Atlas project.
+
+    Status values: ON_TRACK, AT_RISK, OFF_TRACK, DONE.
+    Highlights is a JSON string list of highlight summaries,
+    e.g. '["Shipped feature X", "Completed migration"]'.
+
+    Args:
+        project_id: The Atlas project ID
+        summary: Status update summary text
+        status: Project status (ON_TRACK, AT_RISK, OFF_TRACK, DONE)
+        highlights: JSON string list of highlight summaries (default: "[]")
+
+    Returns:
+        JSON string with creation confirmation
+    """
+    config = load_config()
+    async with AtlasGraphQLClient(config) as client:
+        return await _create_project_update_impl(
+            client, project_id, summary, status, highlights
+        )
+
+
+# Expose impl for testing
+create_project_update._impl = _create_project_update_impl
 
 
 def main() -> None:

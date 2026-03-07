@@ -7,7 +7,7 @@ import pytest
 
 from atlas.config import AtlasConfig
 from atlas.graphql_client import AtlasGraphQLClient
-from atlas.server import get_project_updates
+from atlas.server import create_project_update, get_project_updates
 
 
 @pytest.fixture
@@ -140,5 +140,134 @@ class TestGetProjectUpdates:
         client = _make_client(config, handler)
         async with client:
             result = await get_project_updates._impl(client, "proj-123")
+
+        assert result.startswith("Error:")
+
+
+class TestCreateProjectUpdate:
+    """Tests for the create_project_update tool."""
+
+    @pytest.mark.asyncio
+    async def test_successful_creation_returns_confirmation(self, config):
+        response_data = {
+            "data": {
+                "project": {
+                    "projects_createUpdate": {
+                        "summary": "Q1 done",
+                        "status": {"value": "ON_TRACK"},
+                        "createdAt": "2026-03-07T10:00:00Z",
+                    }
+                }
+            }
+        }
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=response_data)
+
+        client = _make_client(config, handler)
+        async with client:
+            result = await create_project_update._impl(
+                client, "proj-123", "Q1 done", "ON_TRACK", "[]"
+            )
+
+        parsed = json.loads(result)
+        assert parsed["created"] is True
+        assert parsed["summary"] == "Q1 done"
+        assert parsed["status"] == "ON_TRACK"
+        assert parsed["createdAt"] == "2026-03-07T10:00:00Z"
+
+    @pytest.mark.asyncio
+    async def test_mutation_variables_are_correct(self, config):
+        captured_body = {}
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            captured_body.update(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "project": {
+                            "projects_createUpdate": {
+                                "summary": "Update",
+                                "status": {"value": "AT_RISK"},
+                                "createdAt": "2026-03-07T10:00:00Z",
+                            }
+                        }
+                    }
+                },
+            )
+
+        client = _make_client(config, handler)
+        async with client:
+            await create_project_update._impl(
+                client, "proj-123", "Update", "AT_RISK", "[]"
+            )
+
+        variables = captured_body["variables"]
+        assert variables["projectId"] == "proj-123"
+        assert variables["input"]["summary"] == "Update"
+        assert variables["input"]["status"] == "AT_RISK"
+
+    @pytest.mark.asyncio
+    async def test_invalid_status_returns_error(self, config):
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"data": {}})
+
+        client = _make_client(config, handler)
+        async with client:
+            result = await create_project_update._impl(
+                client, "proj-123", "Update", "INVALID_STATUS", "[]"
+            )
+
+        assert result.startswith("Error:")
+        assert "INVALID_STATUS" in result
+
+    @pytest.mark.asyncio
+    async def test_highlights_are_formatted_in_mutation(self, config):
+        captured_body = {}
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            captured_body.update(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "project": {
+                            "projects_createUpdate": {
+                                "summary": "Update",
+                                "status": {"value": "ON_TRACK"},
+                                "createdAt": "2026-03-07T10:00:00Z",
+                            }
+                        }
+                    }
+                },
+            )
+
+        client = _make_client(config, handler)
+        async with client:
+            await create_project_update._impl(
+                client,
+                "proj-123",
+                "Update",
+                "ON_TRACK",
+                '["Shipped feature X", "Completed migration"]',
+            )
+
+        variables = captured_body["variables"]
+        highlights = variables["input"]["highlights"]
+        assert len(highlights) == 2
+        assert highlights[0] == {"summary": "Shipped feature X"}
+        assert highlights[1] == {"summary": "Completed migration"}
+
+    @pytest.mark.asyncio
+    async def test_error_returns_error_string(self, config):
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(500, text="Internal Server Error")
+
+        client = _make_client(config, handler)
+        async with client:
+            result = await create_project_update._impl(
+                client, "proj-123", "Update", "ON_TRACK", "[]"
+            )
 
         assert result.startswith("Error:")
