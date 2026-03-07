@@ -52,6 +52,7 @@ Progress: [██████████] 100%
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 3min | 3 tasks | 9 files |
 | Phase 02-atlas-tools P01 | 4min | 2 tasks | 3 files |
+| Phase 02-atlas-tools P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 - [Phase 02-atlas-tools]: Used thin _impl functions accepting client for testability
 - [Phase 02-atlas-tools]: GraphQL queries isolated in separate queries.py module
 - [Phase 02-atlas-tools]: Response flattening for readable JSON output
+- [Phase 02-atlas-tools]: _impl pattern with ._impl attribute for direct testing without config
+- [Phase 02-atlas-tools]: Status enum validation before API call for clear errors
+- [Phase 02-atlas-tools]: Risk filtering (unresolved only) in application code
 
 ### Pending Todos
 
@@ -76,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T09:21:10Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-07T09:22:08Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

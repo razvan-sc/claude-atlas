@@ -13,7 +13,7 @@ Deliver a Claude Code integration for Atlassian Atlas Projects in three phases: 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - MCP server with config-based auth and GraphQL client (completed 2026-03-07)
-- [ ] **Phase 2: Atlas Tools** - Project queries, updates, and mutations as MCP tools
+- [x] **Phase 2: Atlas Tools** - Project queries, updates, and mutations as MCP tools (completed 2026-03-07)
 - [ ] **Phase 3: Skills** - Slash command workflows for common Atlas operations
 
 ## Phase Details
@@ -67,5 +67,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete    | 2026-03-07 |
-| 2. Atlas Tools | 1/2 | In progress | - |
+| 2. Atlas Tools | 2/2 | Complete   | 2026-03-07 |
 | 3. Skills | 0/? | Not started | - |

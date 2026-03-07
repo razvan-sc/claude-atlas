@@ -19,10 +19,10 @@
 
 ### Updates
 
-- [ ] **UPDT-01**: User can read status updates for a project (summary, status, target date)
-- [ ] **UPDT-02**: User can read unresolved risks for a project
-- [ ] **UPDT-03**: User can read highlights/learnings for a project
-- [ ] **UPDT-04**: User can post a new status update with summary, status, and highlights
+- [x] **UPDT-01**: User can read status updates for a project (summary, status, target date)
+- [x] **UPDT-02**: User can read unresolved risks for a project
+- [x] **UPDT-03**: User can read highlights/learnings for a project
+- [x] **UPDT-04**: User can post a new status update with summary, status, and highlights
 
 ### Skills
 
@@ -68,10 +68,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROJ-01 | Phase 2 | Complete |
 | PROJ-02 | Phase 2 | Complete |
 | PROJ-03 | Phase 2 | Complete |
-| UPDT-01 | Phase 2 | Pending |
-| UPDT-02 | Phase 2 | Pending |
-| UPDT-03 | Phase 2 | Pending |
-| UPDT-04 | Phase 2 | Pending |
+| UPDT-01 | Phase 2 | Complete |
+| UPDT-02 | Phase 2 | Complete |
+| UPDT-03 | Phase 2 | Complete |
+| UPDT-04 | Phase 2 | Complete |
 | SKIL-01 | Phase 3 | Pending |
 | SKIL-02 | Phase 3 | Pending |
 | SKIL-03 | Phase 3 | Pending |
