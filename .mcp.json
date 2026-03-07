@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "atlas": {
+      "command": "uv",
+      "args": ["run", "--directory", "/Users/razvanbalazs/Work/Claude/claude-atlas", "python", "-m", "atlas.server"]
+    }
+  }
+}
