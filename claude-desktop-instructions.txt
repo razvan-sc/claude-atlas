@@ -1,0 +1,155 @@
+# Atlas
+
+Interact with Atlassian Atlas projects using the `atlas` MCP server tools. This skill routes to the right action based on what the user asks for.
+
+## Prerequisites
+
+The `atlas` MCP server must be configured. If any tool call fails with a connection or config error, tell the user:
+- Ensure the `atlas` MCP server is running and configured
+- Ensure `~/.atlas/config.json` exists with `email`, `api_token`, and `subdomain` fields
+
+## Routing
+
+Parse the user's intent and route to the matching action below. If no specific action is requested, default to **my-updates**.
+
+| Keyword | Action |
+|---------|--------|
+| `my-updates` (default) | Show updates for projects where the user is owner or member |
+| `projects` | List all projects |
+| `status <id>` | Show latest status for a specific project |
+| `update <id>` | Post a status update to a project |
+| `archive <id>` | Archive a project |
+| `unarchive <id>` | Unarchive a project |
+
+---
+
+## Action: my-updates
+
+Show recent status updates for all projects where the authenticated user is an owner or member.
+
+### Workflow
+
+1. Call the `list_projects` MCP tool to get all non-archived projects.
+
+2. Parse the returned JSON array. Each project has `owner`, `members`, `name`, `key`, `id`, `state`, and `dueDate` fields.
+
+3. Filter to projects where the authenticated user appears as `owner` or in `members`. Since the config uses email-based auth, match by checking all projects (the API already scopes to the user's organization, so include all returned projects).
+
+4. For each project (up to 10), call `get_project_updates` with the project's `id` to fetch its latest updates.
+
+5. Display results grouped by project:
+
+   For each project that has updates:
+
+   ### [Project Name] (`KEY`)
+   **State:** [state] | **Due:** [dueDate or "-"]
+
+   **Latest update** ([createdAt]):
+   > [summary]
+   >
+   > Status: [status emoji] [status value]
+
+   **Highlights:**
+   - [highlight 1]
+   - [highlight 2]
+
+   Use these status indicators:
+   - `on_track` = green circle
+   - `at_risk` = yellow circle
+   - `off_track` = red circle
+   - `done` = checkmark
+   - `paused` = pause icon
+   - `pending` = hourglass
+   - `cancelled` = cross
+
+6. If a project has no updates, show:
+
+   ### [Project Name] (`KEY`)
+   _No status updates yet._
+
+7. Show a summary line at the end: "Showing updates for N projects."
+
+---
+
+## Action: projects
+
+List all non-archived Atlas projects.
+
+### Workflow
+
+1. Call the `list_projects` MCP tool.
+
+2. Format results as a table:
+
+   | Key | Name | State | Due Date | Owner |
+   |-----|------|-------|----------|-------|
+   | PROJ-1 | Example | on_track | Jun 2026 | Alice |
+
+   Show "-" for missing fields.
+
+3. Show count: "Showing N projects."
+
+---
+
+## Action: status
+
+Show the latest status update and highlights for a specific project.
+
+### Workflow
+
+1. A project ID must be provided. If not, ask the user for it.
+
+2. Call `get_project_updates` with the project ID.
+
+3. Display the most recent update:
+
+   ### Latest Status Update
+   - **Summary:** [summary]
+   - **Status:** [emoji] [status value]
+   - **Updated:** [createdAt]
+
+4. Show highlights if any exist.
+
+5. If there are more updates beyond the first, note: "_N more status updates available._"
+
+---
+
+## Action: update
+
+Post a new status update to a project. This is interactive.
+
+### Workflow
+
+1. A project ID must be provided. If not, ask.
+
+2. Call `get_project_updates` to show current status for context.
+
+3. Ask the user for:
+   - **Summary** (required): What's happening with the project
+   - **Status** (required, default `on_track`): on_track, at_risk, off_track, done, paused, pending, cancelled
+   - **Highlights** (optional): Wins or accomplishments to highlight
+
+4. Show a preview and ask for confirmation.
+
+5. On confirm, call `create_project_update` with:
+   - `project_id`: the project ID
+   - `summary`: user's summary
+   - `status`: chosen status
+   - `highlights`: JSON string array (e.g. `'["Shipped feature X"]'`) or `"[]"`
+
+6. On success: "Status update posted successfully."
+7. On decline: "Update cancelled."
+
+---
+
+## Action: archive / unarchive
+
+Archive or unarchive a project.
+
+### Workflow
+
+1. A project ID must be provided. If not, ask.
+
+2. Call `archive_project` with the project ID and `archive=True` (or `False` for unarchive).
+
+3. Show confirmation: "Project [name] has been archived/unarchived."
