@@ -66,6 +66,29 @@ Add the server to your `.mcp.json`:
 }
 ```
 
+### 4. Add to Claude Desktop
+
+Open **Settings → Developer** in the Claude Desktop app, click **Edit Config**, and add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "atlas": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory", "/path/to/claude-atlas",
+        "python", "-m", "atlas.server"
+      ]
+    }
+  }
+}
+```
+
+Replace `/path/to/claude-atlas` with the absolute path to your local clone of this repo. After saving, restart Claude Desktop — the server should appear under **Settings → Developer** with a `running` status.
+
+![Claude Desktop MCP settings showing atlas server running](docs/claude-desktop-mcp-settings.png)
+
 ## Development
 
 Requires Python 3.10+.
