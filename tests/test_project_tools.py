@@ -7,7 +7,12 @@ import pytest
 
 from atlas.config import AtlasConfig
 from atlas.graphql_client import AtlasGraphQLClient
-from atlas.server import _archive_project_impl, _get_project_impl, _get_projects_impl
+from atlas.server import (
+    _archive_project_impl,
+    _get_project_impl,
+    _get_projects_impl,
+    _list_projects_impl,
+)
 
 
 @pytest.fixture
@@ -22,7 +27,7 @@ def _make_project_response(project_data, *, single=True):
     return {"data": {"projects_byIds": project_data}}
 
 
-def _sample_project(name="My Project", key="PROJ-1"):
+def _sample_project(name="My Project", key="PROJ-1", tags=None):
     return {
         "key": key,
         "name": name,
@@ -36,6 +41,7 @@ def _sample_project(name="My Project", key="PROJ-1"):
                 {"node": {"name": "Bob", "accountId": "acc-2"}},
             ]
         },
+        "tags": {"edges": [{"node": {"name": t}} for t in (tags or [])]},
     }
 
 
@@ -61,6 +67,22 @@ class TestGetProject:
         assert parsed["dueDate"] == "Jun 2026"
         assert parsed["owner"] == "Alice"
         assert parsed["members"] == ["Alice", "Bob"]
+        assert parsed["tags"] == []
+
+    @pytest.mark.asyncio
+    async def test_returns_tags(self, config):
+        project = _sample_project(tags=["platform", "q1"])
+        response = _make_project_response(project)
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=response)
+
+        transport = httpx.MockTransport(handler)
+        async with AtlasGraphQLClient(config, transport=transport) as client:
+            result = await _get_project_impl(client, "proj-123")
+
+        parsed = json.loads(result)
+        assert parsed["tags"] == ["platform", "q1"]
 
     @pytest.mark.asyncio
     async def test_error_returns_error_string(self, config):
@@ -109,6 +131,76 @@ class TestGetProjects:
             result = await _get_projects_impl(client, ["bad-id"])
 
         assert result.startswith("Error:")
+
+
+class TestListProjects:
+    """Tests for list_projects tag filtering."""
+
+    def _make_search_response(self, projects):
+        return {
+            "data": {
+                "projects_search": {
+                    "edges": [{"node": {**p, "id": f"ari:{p['key']}"}} for p in projects]
+                }
+            }
+        }
+
+    @pytest.mark.asyncio
+    async def test_returns_all_projects_without_tag_filter(self, config):
+        projects = [
+            _sample_project("Proj A", "P-1", tags=["platform"]),
+            _sample_project("Proj B", "P-2", tags=["mobile"]),
+        ]
+        response = self._make_search_response(projects)
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=response)
+
+        transport = httpx.MockTransport(handler)
+        async with AtlasGraphQLClient(config, transport=transport) as client:
+            result = await _list_projects_impl(client, 50, "ari:cloud:townsquare::site/abc")
+
+        parsed = json.loads(result)
+        assert len(parsed) == 2
+
+    @pytest.mark.asyncio
+    async def test_filters_projects_by_tag(self, config):
+        projects = [
+            _sample_project("Proj A", "P-1", tags=["platform"]),
+            _sample_project("Proj B", "P-2", tags=["mobile"]),
+            _sample_project("Proj C", "P-3", tags=["platform", "mobile"]),
+        ]
+        response = self._make_search_response(projects)
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=response)
+
+        transport = httpx.MockTransport(handler)
+        async with AtlasGraphQLClient(config, transport=transport) as client:
+            result = await _list_projects_impl(
+                client, 50, "ari:cloud:townsquare::site/abc", tag="platform"
+            )
+
+        parsed = json.loads(result)
+        assert len(parsed) == 2
+        assert {p["name"] for p in parsed} == {"Proj A", "Proj C"}
+
+    @pytest.mark.asyncio
+    async def test_tag_filter_returns_empty_when_no_match(self, config):
+        projects = [_sample_project("Proj A", "P-1", tags=["mobile"])]
+        response = self._make_search_response(projects)
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=response)
+
+        transport = httpx.MockTransport(handler)
+        async with AtlasGraphQLClient(config, transport=transport) as client:
+            result = await _list_projects_impl(
+                client, 50, "ari:cloud:townsquare::site/abc", tag="platform"
+            )
+
+        parsed = json.loads(result)
+        assert parsed == []
 
 
 class TestArchiveProject:

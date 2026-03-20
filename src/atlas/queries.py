@@ -28,6 +28,13 @@ query projects_byId($projectId: String!) {
         }
       }
     }
+    tags {
+      edges {
+        node {
+          name
+        }
+      }
+    }
   }
 }
 """
@@ -56,6 +63,13 @@ query projects_byIds($projectIds: [String!]!) {
       edges {
         node {
           accountId
+          name
+        }
+      }
+    }
+    tags {
+      edges {
+        node {
           name
         }
       }
@@ -121,6 +135,9 @@ query ListProjects($first: Int, $containerId: String!) {
               accountId
             }
           }
+        }
+        tags {
+          name
         }
       }
     }

@@ -26,6 +26,10 @@ def _format_project(raw: dict[str, Any]) -> dict[str, Any]:
         edge["node"]["name"]
         for edge in raw.get("members", {}).get("edges", [])
     ]
+    tags = [
+        edge["node"]["name"]
+        for edge in raw.get("tags", {}).get("edges", [])
+    ]
     description = raw.get("description")
     desc_text = description.get("what") if description else None
     owner = raw.get("owner")
@@ -38,6 +42,7 @@ def _format_project(raw: dict[str, Any]) -> dict[str, Any]:
         "dueDate": due_date.get("label") if due_date else None,
         "owner": owner.get("name") if owner else None,
         "members": members,
+        "tags": tags,
     }
 
 
@@ -152,15 +157,37 @@ async def get_projects(project_ids: list[str]) -> str:
         return await _get_projects_impl(client, project_ids)
 
 
+async def _list_projects_impl(
+    client: AtlasGraphQLClient,
+    limit: int,
+    container_ari: str,
+    tag: str | None = None,
+) -> str:
+    """List projects, optionally filtered by tag."""
+    result = await client.execute(
+        LIST_PROJECTS_QUERY, {"first": limit, "containerId": container_ari}
+    )
+    edges = result["data"]["projects_search"]["edges"]
+    projects = []
+    for edge in edges:
+        p = edge["node"]
+        formatted = _format_project(p)
+        formatted["id"] = p.get("id")
+        if tag is None or tag in formatted["tags"]:
+            projects.append(formatted)
+    return json.dumps(projects, indent=2)
+
+
 @mcp.tool()
-async def list_projects(limit: int = 50) -> str:
+async def list_projects(limit: int = 50, tag: str | None = None) -> str:
     """List all non-archived Atlas projects for the authenticated user.
 
     Returns projects sorted by most recently updated. Each project includes
-    its ID, key, name, description, state, due date, owner, and members.
+    its ID, key, name, description, state, due date, owner, members, and tags.
 
     Args:
         limit: Maximum number of projects to return (default: 50)
+        tag: Optional tag name to filter projects by (case-sensitive)
 
     Returns:
         JSON string with array of project details
@@ -173,17 +200,7 @@ async def list_projects(limit: int = 50) -> str:
                 cloud_id = await _resolve_cloud_id(client, config.hostname)
 
             container_ari = f"ari:cloud:townsquare::site/{cloud_id}"
-            result = await client.execute(
-                LIST_PROJECTS_QUERY, {"first": limit, "containerId": container_ari}
-            )
-            edges = result["data"]["projects_search"]["edges"]
-            projects = []
-            for edge in edges:
-                p = edge["node"]
-                formatted = _format_project(p)
-                formatted["id"] = p.get("id")
-                projects.append(formatted)
-            return json.dumps(projects, indent=2)
+            return await _list_projects_impl(client, limit, container_ari, tag=tag)
         except Exception as e:
             return f"Error: {type(e).__name__}: {e}"
 
