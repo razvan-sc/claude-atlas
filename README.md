@@ -21,11 +21,17 @@ claude-atlas exposes Atlas project data as MCP tools, allowing Claude Code to re
 
 ### Claude Code Skills
 
-The server also ships with Claude Code slash command skills:
+The server also ships with Claude Code slash command skills. They live in
+`.claude/skills/`, so anyone who clones this repo gets them automatically — no
+separate install. Each skill calls the `atlas` MCP tools, so the server must be
+configured (see Setup below) for them to work.
 
-- `/atlas:projects` -- List and browse your Atlas projects in a formatted table
-- `/atlas:status` -- View the latest status updates for a project
-- `/atlas:update` -- Post a new status update to a project
+- `/atlas-projects` -- List and browse your Atlas projects in a formatted table
+- `/atlas-create` -- Create one or more projects, optionally linked to a goal, tagged, and linked to Jira issues
+- `/atlas-status` -- View the latest status updates for a project
+- `/atlas-update` -- Compose and post a new status update to a project
+- `/atlas-my-updates` -- List status updates for projects you own or contribute to
+- `/atlas-tag` -- List projects filtered by a tag
 
 ## Setup
 
