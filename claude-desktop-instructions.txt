@@ -16,6 +16,7 @@ Parse the user's intent and route to the matching action below. If no specific a
 |---------|--------|
 | `my-updates` (default) | Show updates for projects where the user is owner or member |
 | `projects` | List all projects |
+| `create` | Create a new project (optionally with goal, tag, Jira link) |
 | `status <id>` | Show latest status for a specific project |
 | `update <id>` | Post a status update to a project |
 | `archive <id>` | Archive a project |
@@ -88,6 +89,53 @@ List all non-archived Atlas projects.
    Show "-" for missing fields.
 
 3. Show count: "Showing N projects."
+
+---
+
+## Action: create
+
+Create one or more Atlas projects. The `create_project` MCP tool accepts:
+`name` (required), `description`, `goal`, `tag`, and `jira_issue_key`. Only
+`name` is required — include the optional fields the user asked for. `goal` and
+`jira_issue_key` accept either a key (e.g. `SAFET-2881`, `FG-6269`) or an ARI;
+they are resolved automatically. `tag` is created if it doesn't already exist.
+
+### Single project
+
+1. Gather details. Ask for `name` if not provided; `description`, `goal`, `tag`,
+   and `jira_issue_key` are optional.
+
+2. Show a preview and ask for confirmation:
+
+   ### Preview
+   - **Name:** [name]
+   - **Description:** [description or "None"]
+   - **Goal:** [goal or "None"]
+   - **Tag:** [tag or "None"]
+   - **Jira issue:** [jira_issue_key or "None"]
+
+3. On confirm, call `create_project` with the gathered arguments.
+
+4. On success, the tool returns JSON with the new `key`, `name`, and any
+   `warnings`. Report the created project and surface any warnings. A result
+   string starting with `Error:` means the project was **not** created.
+
+### Batch from a list of Jira issues
+
+When the user gives a list of Jira issue keys and wants a project created for
+and linked to each:
+
+1. Confirm shared conventions once: project naming (default: name each after its
+   ticket), description, a single `goal` to link all to (or none), and a single
+   `tag` for all (or none).
+
+2. Show the full plan as a table and confirm before creating anything.
+
+3. Call `create_project` once per ticket, passing `jira_issue_key` for each. Do
+   not stop on the first failure — create the rest and collect results.
+
+4. Report a results table: each ticket, its created project key (or error), and
+   any warnings.
 
 ---
 
