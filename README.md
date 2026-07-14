@@ -33,6 +33,30 @@ configured (see Setup below) for them to work.
 - `/atlas-my-updates` -- List status updates for projects you own or contribute to
 - `/atlas-tag` -- List projects filtered by a tag
 
+## Install as a plugin (recommended for sharing)
+
+This repo is a Claude Code plugin marketplace, so anyone in the org can install
+the MCP server **and** all the skills in one step:
+
+```bash
+/plugin marketplace add razvan-sc/claude-atlas
+/plugin install atlas@safetyculture-atlas
+```
+
+Skills are then available namespaced as `/atlas:create`, `/atlas:projects`,
+`/atlas:status`, and so on. To pick up new versions after changes are pushed:
+
+```bash
+/plugin marketplace update safetyculture-atlas
+```
+
+Two per-user prerequisites still apply:
+
+- [`uv`](https://docs.astral.sh/uv/) must be installed — the bundled `atlas` MCP
+  server runs via `uv run`.
+- Each user needs their own `~/.atlas/config.json` (see [Setup](#setup) below) —
+  credentials are personal and are not bundled with the plugin.
+
 ## Setup
 
 ### 1. Create a config file
