@@ -1,0 +1,15 @@
+{
+  "name": "safetyculture-atlas",
+  "description": "Atlassian Atlas tooling for Claude — the atlas plugin (MCP server + skills) for reading, creating, and updating Atlas projects.",
+  "owner": {
+    "name": "razvan-sc"
+  },
+  "plugins": [
+    {
+      "name": "atlas",
+      "source": ".",
+      "description": "Read, create, and update Atlassian Atlas projects from Claude — list, browse, create (with goal/tag/Jira links), and post status updates.",
+      "version": "0.1.0"
+    }
+  ]
+}

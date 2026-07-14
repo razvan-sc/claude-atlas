@@ -1,0 +1,14 @@
+{
+  "name": "atlas",
+  "displayName": "Atlassian Atlas",
+  "version": "0.1.0",
+  "description": "Read, create, and update Atlassian Atlas projects from Claude — list, browse, create (with goal/tag/Jira links), and post status updates.",
+  "author": {
+    "name": "razvan-sc"
+  },
+  "repository": "https://github.com/razvan-sc/claude-atlas",
+  "license": "MIT",
+  "keywords": ["atlassian", "atlas", "mcp", "projects", "jira"],
+  "skills": "./.claude/skills/",
+  "mcpServers": "./.claude-plugin/mcp.json"
+}
