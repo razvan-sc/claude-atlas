@@ -170,6 +170,96 @@ query GetProjectUpdates($projectId: String!) {
 }
 """
 
+CREATE_PROJECT_MUTATION = """
+mutation projects_create($input: TownsquareProjectsCreateInput!) {
+  projects_create(input: $input) {
+    success
+    errors {
+      message
+    }
+    project {
+      id
+      key
+      name
+    }
+  }
+}
+"""
+
+SET_PROJECT_DESCRIPTION_MUTATION = """
+mutation projects_edit($input: TownsquareProjectsEditInput) {
+  projects_edit(input: $input) {
+    success
+    errors {
+      message
+    }
+    project {
+      id
+      key
+    }
+  }
+}
+"""
+
+ADD_GOAL_LINK_MUTATION = """
+mutation projects_addGoalLink($input: TownsquareProjectsAddGoalLink!) {
+  projects_addGoalLink(input: $input) {
+    success
+    errors {
+      message
+    }
+    goal {
+      id
+      key
+    }
+  }
+}
+"""
+
+ADD_TAGS_BY_NAME_MUTATION = """
+mutation home_addTagsByName($input: TownsquareAddTagsByNameInput!) {
+  home_addTagsByName(input: $input) {
+    success
+    errors {
+      message
+    }
+  }
+}
+"""
+
+ADD_JIRA_WORK_ITEM_LINK_MUTATION = """
+mutation projects_addJiraWorkItemLink($input: TownsquareProjectsAddJiraWorkItemLinkInput!) {
+  projects_addJiraWorkItemLink(input: $input) {
+    success
+    errors {
+      message
+    }
+  }
+}
+"""
+
+RESOLVE_GOAL_BY_KEY_QUERY = """
+query goals_byKey($containerId: ID!, $goalKey: String!) {
+  goals_byKey(containerId: $containerId, goalKey: $goalKey) {
+    id
+    key
+    name
+  }
+}
+"""
+
+RESOLVE_JIRA_ISSUE_QUERY = """
+query jiraIssueByKey($cloudId: ID!, $key: String!) {
+  jira {
+    issueByKey(cloudId: $cloudId, key: $key) {
+      id
+      key
+      summary
+    }
+  }
+}
+"""
+
 TENANT_CONTEXT_QUERY = """
 query GetTenantContext($hostNames: [String!]!) {
   tenantContexts(hostNames: $hostNames) {

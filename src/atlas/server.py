@@ -8,12 +8,19 @@ from mcp.server.fastmcp import FastMCP
 from atlas.config import load_config
 from atlas.graphql_client import AtlasGraphQLClient
 from atlas.queries import (
+    ADD_GOAL_LINK_MUTATION,
+    ADD_JIRA_WORK_ITEM_LINK_MUTATION,
+    ADD_TAGS_BY_NAME_MUTATION,
+    CREATE_PROJECT_MUTATION,
     CREATE_UPDATE_MUTATION,
     EDIT_PROJECT_MUTATION,
     GET_PROJECT_QUERY,
     GET_PROJECT_UPDATES_QUERY,
     GET_PROJECTS_QUERY,
     LIST_PROJECTS_QUERY,
+    RESOLVE_GOAL_BY_KEY_QUERY,
+    RESOLVE_JIRA_ISSUE_QUERY,
+    SET_PROJECT_DESCRIPTION_MUTATION,
     TENANT_CONTEXT_QUERY,
 )
 
@@ -99,6 +106,200 @@ async def _archive_project_impl(
         )
     except Exception as e:
         return f"Error: {type(e).__name__}: {e}"
+
+
+def _payload_errors(payload: dict[str, Any]) -> list[str]:
+    """Extract error messages from a mutation payload."""
+    errors = payload.get("errors") or []
+    return [e.get("message") for e in errors if e and e.get("message")]
+
+
+async def _resolve_goal_id(
+    client: AtlasGraphQLClient, container_ari: str, goal: str
+) -> str:
+    """Resolve a goal reference (ARI or key) to a goal ARI."""
+    if goal.startswith("ari:"):
+        return goal
+    result = await client.execute(
+        RESOLVE_GOAL_BY_KEY_QUERY, {"containerId": container_ari, "goalKey": goal}
+    )
+    node = result["data"]["goals_byKey"]
+    if not node:
+        raise RuntimeError(f"Goal '{goal}' not found")
+    return node["id"]
+
+
+async def _resolve_jira_work_item_id(
+    client: AtlasGraphQLClient, cloud_id: str, jira: str
+) -> str:
+    """Resolve a Jira issue reference (ARI or key) to a work item ARI."""
+    if jira.startswith("ari:"):
+        return jira
+    result = await client.execute(
+        RESOLVE_JIRA_ISSUE_QUERY, {"cloudId": cloud_id, "key": jira}
+    )
+    node = result["data"]["jira"]["issueByKey"]
+    if not node:
+        raise RuntimeError(f"Jira issue '{jira}' not found")
+    return node["id"]
+
+
+async def _create_project_impl(
+    client: AtlasGraphQLClient,
+    container_ari: str,
+    cloud_id: str,
+    name: str,
+    description: str = "",
+    goal: str | None = None,
+    tag: str | None = None,
+    jira_issue_key: str | None = None,
+) -> str:
+    """Create a project, then apply description, goal link, tag, and Jira link.
+
+    The project is created first (the only required step); each optional
+    attribute is applied in a follow-up call. A failure on an optional step is
+    reported as a warning rather than failing the whole operation, since the
+    project already exists at that point.
+    """
+    try:
+        result = await client.execute(
+            CREATE_PROJECT_MUTATION,
+            {"input": {"containerId": container_ari, "name": name}},
+        )
+        payload = result["data"]["projects_create"]
+        if not payload.get("success") or not payload.get("project"):
+            reason = "; ".join(_payload_errors(payload)) or "unknown error"
+            return f"Error: RuntimeError: Failed to create project: {reason}"
+
+        project = payload["project"]
+        project_id = project["id"]
+        applied: dict[str, Any] = {
+            "created": True,
+            "id": project_id,
+            "key": project.get("key"),
+            "name": project.get("name"),
+        }
+        warnings: list[str] = []
+
+        if description:
+            desc_payload = (
+                await client.execute(
+                    SET_PROJECT_DESCRIPTION_MUTATION,
+                    {"input": {"id": project_id, "description": {"what": description}}},
+                )
+            )["data"]["projects_edit"]
+            if desc_payload.get("success"):
+                applied["description"] = description
+            else:
+                reason = "; ".join(_payload_errors(desc_payload)) or "unknown error"
+                warnings.append(f"description not set: {reason}")
+
+        if goal:
+            try:
+                goal_id = await _resolve_goal_id(client, container_ari, goal)
+                goal_payload = (
+                    await client.execute(
+                        ADD_GOAL_LINK_MUTATION,
+                        {"input": {"goalId": goal_id, "projectId": project_id}},
+                    )
+                )["data"]["projects_addGoalLink"]
+                if goal_payload.get("success"):
+                    linked = goal_payload.get("goal") or {}
+                    applied["goal"] = linked.get("key") or goal
+                else:
+                    reason = "; ".join(_payload_errors(goal_payload)) or "unknown error"
+                    warnings.append(f"goal not linked: {reason}")
+            except Exception as e:
+                warnings.append(f"goal not linked: {type(e).__name__}: {e}")
+
+        if tag:
+            tag_payload = (
+                await client.execute(
+                    ADD_TAGS_BY_NAME_MUTATION,
+                    {"input": {"nounId": project_id, "tagNames": [tag]}},
+                )
+            )["data"]["home_addTagsByName"]
+            if tag_payload.get("success"):
+                applied["tag"] = tag
+            else:
+                reason = "; ".join(_payload_errors(tag_payload)) or "unknown error"
+                warnings.append(f"tag not added: {reason}")
+
+        if jira_issue_key:
+            try:
+                work_item_id = await _resolve_jira_work_item_id(
+                    client, cloud_id, jira_issue_key
+                )
+                jira_payload = (
+                    await client.execute(
+                        ADD_JIRA_WORK_ITEM_LINK_MUTATION,
+                        {"input": {"projectId": project_id, "workItemId": work_item_id}},
+                    )
+                )["data"]["projects_addJiraWorkItemLink"]
+                if jira_payload.get("success"):
+                    applied["jiraWorkItem"] = jira_issue_key
+                else:
+                    reason = "; ".join(_payload_errors(jira_payload)) or "unknown error"
+                    warnings.append(f"Jira link not added: {reason}")
+            except Exception as e:
+                warnings.append(f"Jira link not added: {type(e).__name__}: {e}")
+
+        if warnings:
+            applied["warnings"] = warnings
+        return json.dumps(applied, indent=2)
+    except Exception as e:
+        return f"Error: {type(e).__name__}: {e}"
+
+
+@mcp.tool()
+async def create_project(
+    name: str,
+    description: str = "",
+    goal: str | None = None,
+    tag: str | None = None,
+    jira_issue_key: str | None = None,
+) -> str:
+    """Create a new Atlas project.
+
+    Creates the project, then optionally sets a description, links it to a goal,
+    adds a tag, and links it to a Jira work item. Only `name` is required.
+
+    Args:
+        name: Project name
+        description: Project description ("what" the project is about)
+        goal: Optional goal to link — either a goal key (e.g. "GOAL-42") or a
+            goal ARI. Resolved by key within the current site.
+        tag: Optional tag name to add to the project (created if it doesn't exist)
+        jira_issue_key: Optional Jira issue to link — either an issue key
+            (e.g. "PROJ-123") or a Jira work item ARI. Resolved by key.
+
+    Returns:
+        JSON string with the created project's id, key, name, applied
+        attributes, and any warnings from optional steps that failed.
+    """
+    config = load_config()
+    async with AtlasGraphQLClient(config) as client:
+        try:
+            cloud_id = config.cloud_id
+            if not cloud_id:
+                cloud_id = await _resolve_cloud_id(client, config.hostname)
+            container_ari = f"ari:cloud:townsquare::site/{cloud_id}"
+            return await _create_project_impl(
+                client,
+                container_ari,
+                cloud_id,
+                name,
+                description=description,
+                goal=goal,
+                tag=tag,
+                jira_issue_key=jira_issue_key,
+            )
+        except Exception as e:
+            return f"Error: {type(e).__name__}: {e}"
+
+
+# Expose impl for testing
+create_project._impl = _create_project_impl
 
 
 @mcp.tool()

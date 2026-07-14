@@ -11,6 +11,7 @@ claude-atlas exposes Atlas project data as MCP tools, allowing Claude Code to re
 | Tool | Description |
 |------|-------------|
 | `list_projects` | List all non-archived projects, sorted by most recently updated |
+| `create_project` | Create a project with a name, description, and optional goal link, tag, and Jira issue link |
 | `get_project` | Get details of a single project by ID (name, description, state, due date, owner, members) |
 | `get_projects` | Get details of multiple projects by their IDs |
 | `get_project_updates` | Get status updates and highlights for a project |
