@@ -2,3 +2,6 @@
 .DS_Store
 src/atlas/__pycache__
 tests/__pycache__
+dist/
+*.mcpb
+.venv/

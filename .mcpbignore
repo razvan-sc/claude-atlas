@@ -1,0 +1,15 @@
+.git/
+.github/
+.venv/
+.planning/
+.claude/
+.claude-plugin/
+tests/
+docs/
+dist/
+bin/
+skills/
+claude-desktop-instructions.txt
+.mcp.json
+**/__pycache__/
+*.pyc

@@ -65,3 +65,28 @@ class TestLoadConfig:
         }))
         with pytest.raises(ValueError):
             load_config(config_file)
+
+
+class TestLoadConfigFromEnv:
+    """load_config() reads ATLAS_* env vars (used by the Claude Desktop extension)."""
+
+    def test_env_vars_win_when_all_required_are_set(self, monkeypatch, tmp_path: Path):
+        monkeypatch.setenv("ATLAS_EMAIL", "env@example.com")
+        monkeypatch.setenv("ATLAS_API_TOKEN", "envtok")
+        monkeypatch.setenv("ATLAS_SUBDOMAIN", "envsite")
+        monkeypatch.setenv("ATLAS_CLOUD_ID", "")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        config = load_config()
+        assert (config.email, config.api_token, config.subdomain, config.cloud_id) == (
+            "env@example.com", "envtok", "envsite", ""
+        )
+
+    def test_falls_back_to_file_when_env_incomplete(self, monkeypatch, tmp_path: Path):
+        monkeypatch.setenv("ATLAS_EMAIL", "env@example.com")
+        monkeypatch.delenv("ATLAS_API_TOKEN", raising=False)
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        (tmp_path / ".atlas").mkdir()
+        (tmp_path / ".atlas" / "config.json").write_text(json.dumps({
+            "email": "file@example.com", "api_token": "filetok", "subdomain": "filesite",
+        }))
+        assert load_config().email == "file@example.com"

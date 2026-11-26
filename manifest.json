@@ -1,0 +1,72 @@
+{
+  "manifest_version": "0.4",
+  "name": "atlas",
+  "display_name": "Atlassian Atlas",
+  "version": "0.2.0",
+  "description": "Read, create, and update Atlassian Atlas projects from Claude.",
+  "long_description": "List and browse Atlas projects, create projects (with goal, tag and Jira links), read status updates and post new ones. Requires uv (https://docs.astral.sh/uv/) on this machine.",
+  "author": {
+    "name": "razvan-sc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/razvan-sc/claude-atlas"
+  },
+  "license": "MIT",
+  "keywords": ["atlassian", "atlas", "projects", "jira"],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/atlas/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--quiet", "--directory", "${__dirname}", "python", "-m", "atlas.server"],
+      "env": {
+        "ATLAS_EMAIL": "${user_config.email}",
+        "ATLAS_API_TOKEN": "${user_config.api_token}",
+        "ATLAS_SUBDOMAIN": "${user_config.subdomain}",
+        "ATLAS_CLOUD_ID": "${user_config.cloud_id}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "list_projects", "description": "List non-archived projects, most recently updated first" },
+    { "name": "create_project", "description": "Create a project with optional goal, tag and Jira link" },
+    { "name": "get_project", "description": "Get one project by ID" },
+    { "name": "get_projects", "description": "Get several projects by ID" },
+    { "name": "get_project_updates", "description": "Get status updates and highlights for a project" },
+    { "name": "create_project_update", "description": "Post a status update" },
+    { "name": "archive_project", "description": "Archive or unarchive a project" },
+    { "name": "atlas_graphql_query", "description": "Run a raw GraphQL query against the Atlas API" }
+  ],
+  "user_config": {
+    "email": {
+      "type": "string",
+      "title": "Atlassian email",
+      "description": "The email you sign in to Atlassian with",
+      "required": true
+    },
+    "api_token": {
+      "type": "string",
+      "title": "Atlassian API token",
+      "description": "Create one at https://id.atlassian.com/manage-profile/security/api-tokens",
+      "sensitive": true,
+      "required": true
+    },
+    "subdomain": {
+      "type": "string",
+      "title": "Atlassian site",
+      "description": "The 'yoursite' part of yoursite.atlassian.net",
+      "required": true
+    },
+    "cloud_id": {
+      "type": "string",
+      "title": "Cloud ID (optional)",
+      "description": "Leave empty to resolve it automatically",
+      "required": false,
+      "default": ""
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"]
+  }
+}

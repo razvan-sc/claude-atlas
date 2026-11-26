@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -40,8 +41,31 @@ class AtlasConfig:
 _REQUIRED_FIELDS = ("email", "api_token", "subdomain")
 
 
+_ENV_VARS = {
+    "email": "ATLAS_EMAIL",
+    "api_token": "ATLAS_API_TOKEN",
+    "subdomain": "ATLAS_SUBDOMAIN",
+    "cloud_id": "ATLAS_CLOUD_ID",
+}
+
+
+def _config_from_env() -> AtlasConfig | None:
+    """Build a config from ATLAS_* env vars, or None if they are not all set.
+
+    The Claude Desktop extension passes the values the user typed into its
+    settings form this way, so no config file is needed there.
+    """
+    values = {field: os.environ.get(var, "").strip() for field, var in _ENV_VARS.items()}
+    if not all(values[f] for f in _REQUIRED_FIELDS):
+        return None
+    return AtlasConfig(**values)
+
+
 def load_config(path: Path | None = None) -> AtlasConfig:
-    """Load Atlas configuration from a JSON file.
+    """Load Atlas configuration from ATLAS_* env vars or a JSON file.
+
+    When no path is given and ATLAS_EMAIL, ATLAS_API_TOKEN and ATLAS_SUBDOMAIN
+    are all set, those win over the file.
 
     Args:
         path: Path to config file. Defaults to ~/.atlas/config.json.
@@ -54,6 +78,9 @@ def load_config(path: Path | None = None) -> AtlasConfig:
         ValueError: If required fields are missing or empty.
     """
     if path is None:
+        env_config = _config_from_env()
+        if env_config is not None:
+            return env_config
         path = Path.home() / ".atlas" / "config.json"
 
     if not path.exists():

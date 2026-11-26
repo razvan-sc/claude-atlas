@@ -4,7 +4,7 @@ An MCP (Model Context Protocol) server that gives Claude Code access to [Atlassi
 
 ## What it does
 
-claude-atlas exposes Atlas project data as MCP tools, allowing Claude Code to read and update your Atlas projects through natural conversation. It communicates with the Atlas GraphQL API using Basic Auth.
+claude-atlas exposes Atlas project data as MCP tools, allowing Claude to read and update your Atlas projects through natural conversation. It communicates with the Atlas GraphQL API using Basic Auth.
 
 ### MCP Tools
 
@@ -22,8 +22,8 @@ claude-atlas exposes Atlas project data as MCP tools, allowing Claude Code to re
 ### Claude Code Skills
 
 The server also ships with Claude Code slash command skills. They live in
-`.claude/skills/`, so anyone who clones this repo gets them automatically — no
-separate install. Each skill calls the `atlas` MCP tools, so the server must be
+`skills/` (symlinked from `.claude/skills/`), so anyone who clones this repo
+gets them automatically. Each skill calls the `atlas` MCP tools, so the server must be
 configured (see Setup below) for them to work.
 
 - `/atlas-projects` -- List and browse your Atlas projects in a formatted table
@@ -34,36 +34,58 @@ configured (see Setup below) for them to work.
 - `/atlas-tag` -- List projects filtered by a tag
 - `/atlas-setup` -- First-run setup: checks `uv`, creates `~/.atlas/config.json`, verifies the connection
 
-## Install as a plugin (recommended for sharing)
+## Install
 
-This repo is a Claude Code plugin marketplace, so anyone in the org can install
-the MCP server **and** all the skills in one step:
+Every option needs [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
+on your machine, since the server runs through `uv run`. You also need your own
+[Atlassian API token](https://id.atlassian.com/manage-profile/security/api-tokens).
+Credentials are personal and are not bundled with the plugin.
+
+### Claude Code (CLI, IDE, or the desktop app's Code tab)
+
+This repo is a plugin marketplace. You get the MCP server and all the skills in
+one step:
 
 ```bash
 /plugin marketplace add razvan-sc/claude-atlas
 /plugin install atlas@safetyculture-atlas
 ```
 
-Skills are then available namespaced as `/atlas:create`, `/atlas:projects`,
-`/atlas:status`, and so on. To pick up new versions after changes are pushed:
+Then run `/atlas:setup`. It checks `uv`, creates `~/.atlas/config.json`, and
+verifies the connection. Skills are namespaced as `/atlas:create`,
+`/atlas:projects`, `/atlas:status`, and so on. To pick up new versions:
 
 ```bash
 /plugin marketplace update safetyculture-atlas
 ```
 
-Then run `/atlas:setup` — it checks the prerequisites below, walks you through
-creating your config file, and verifies the connection.
+### Claude Desktop: Cowork (plugin with skills)
 
-Two per-user prerequisites still apply:
+1. In Claude Desktop, open **Customize → Plugins → Add marketplace** and enter
+   `razvan-sc/claude-atlas`.
+2. Install **atlas** from the `safetyculture-atlas` marketplace.
+3. Create `~/.atlas/config.json` (see [Config file](#config-file)), or ask Claude
+   to run the `atlas-setup` skill.
 
-- [`uv`](https://docs.astral.sh/uv/) must be installed — the bundled `atlas` MCP
-  server runs via `uv run`.
-- Each user needs their own `~/.atlas/config.json` (see [Setup](#setup) below) —
-  credentials are personal and are not bundled with the plugin.
+### Claude Desktop: Chat (one-click extension)
 
-## Setup
+The chat app loads MCP servers as Desktop Extensions (`.mcpb`). The extension
+asks for your email, API token, and site in a settings form. The token is
+stored in the OS keychain, so no config file is needed.
 
-### 1. Create a config file
+1. Download `atlas.mcpb` from the
+   [latest release](https://github.com/razvan-sc/claude-atlas/releases), or
+   build it yourself (see [Building the Desktop extension](#building-the-desktop-extension)).
+2. Double-click it, or drag it onto **Settings → Extensions** in Claude Desktop.
+3. Fill in the form and enable the extension.
+
+The extension adds only the MCP tools. The chat app does not load plugin
+skills. If you want the slash-command workflows in chat too, zip a folder from
+`skills/` and upload it under **Settings → Capabilities → Skills**.
+
+## Config file
+
+Claude Code and Cowork read `~/.atlas/config.json`:
 
 ```bash
 mkdir -p ~/.atlas
@@ -74,55 +96,48 @@ cat > ~/.atlas/config.json << 'EOF'
   "subdomain": "yoursite"
 }
 EOF
+chmod 600 ~/.atlas/config.json
 ```
 
-- `email` -- Your Atlassian account email
-- `api_token` -- An [Atlassian API token](https://id.atlassian.com/manage-profile/security/api-tokens)
-- `subdomain` -- Your Atlassian site name (the `yoursite` part of `yoursite.atlassian.net`)
-- `cloud_id` (optional) -- Your Atlassian cloud ID. If omitted, it will be resolved automatically.
+- `email`: your Atlassian account email
+- `api_token`: an [Atlassian API token](https://id.atlassian.com/manage-profile/security/api-tokens)
+- `subdomain`: your Atlassian site name (the `yoursite` part of `yoursite.atlassian.net`)
+- `cloud_id` (optional): your Atlassian cloud ID. If you leave it out, it is resolved automatically.
 
-### 2. Install
+You can also set `ATLAS_EMAIL`, `ATLAS_API_TOKEN`, `ATLAS_SUBDOMAIN`, and
+optionally `ATLAS_CLOUD_ID` as environment variables. When all three required
+variables are set, they take precedence over the file. The Desktop extension
+uses this mechanism.
+
+## Manual MCP setup (without the plugin)
+
+For a local clone, point any MCP client at the launcher script. The script
+finds `uv` even when a GUI app starts it with a minimal `PATH`:
+
+```json
+{
+  "mcpServers": {
+    "atlas": {
+      "command": "/path/to/claude-atlas/bin/atlas-mcp"
+    }
+  }
+}
+```
+
+In this repo, `.mcp.json` already does this, so opening the clone in Claude
+Code picks up the server and the skills in `.claude/skills` (a symlink to
+`skills/`).
+
+## Building the Desktop extension
 
 ```bash
-pip install -e .
+npm install -g @anthropic-ai/mcpb
+mcpb validate manifest.json
+mcpb pack . dist/atlas.mcpb
 ```
 
-### 3. Add to Claude Code
-
-Add the server to your `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "atlas": {
-      "command": "atlas"
-    }
-  }
-}
-```
-
-### 4. Add to Claude Desktop
-
-Open **Settings → Developer** in the Claude Desktop app, click **Edit Config**, and add the following to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "atlas": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory", "/path/to/claude-atlas",
-        "python", "-m", "atlas.server"
-      ]
-    }
-  }
-}
-```
-
-Replace `/path/to/claude-atlas` with the absolute path to your local clone of this repo. After saving, restart Claude Desktop — the server should appear under **Settings → Developer** with a `running` status.
-
-![Claude Desktop MCP settings showing atlas server running](docs/claude-desktop-mcp-settings.png)
+`.mcpbignore` keeps tests, planning docs, and plugin files out of the bundle.
+Attach `dist/atlas.mcpb` to a GitHub release so others can download it.
 
 ## Development
 

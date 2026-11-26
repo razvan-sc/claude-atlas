@@ -16,7 +16,7 @@ Run `uv --version`. If it is missing, tell the user to install it:
 - macOS (Homebrew): `brew install uv`
 - Windows: `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
 
-Then ask them to restart Claude Code so the MCP server can start.
+Then ask them to restart Claude Code (or Claude Desktop) so the MCP server can start.
 
 ## Step 2: Check the config file
 
@@ -52,6 +52,6 @@ Read `~/.atlas/config.json`.
 Call `mcp__atlas__list_projects` with `limit: 1`.
 
 - Success: say setup is done and list the available skills: `/atlas:projects`, `/atlas:create`, `/atlas:status`, `/atlas:update`, `/atlas:my-updates`, `/atlas:tag`.
-- Tool not available: the plugin or MCP server isn't loaded. Ask them to run `/plugin install atlas@safetyculture-atlas` (after `/plugin marketplace add razvan-sc/claude-atlas`) and restart Claude Code.
+- Tool not available: the plugin or MCP server isn't loaded. Ask them to run `/plugin install atlas@safetyculture-atlas` (after `/plugin marketplace add razvan-sc/claude-atlas`) and restart Claude Code (or Claude Desktop).
 - 401/403 error: the email or token is wrong, or the token expired. Have them create a new token and update the file.
 - Other errors: show the error and check that `subdomain` matches their site URL.
