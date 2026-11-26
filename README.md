@@ -32,6 +32,7 @@ configured (see Setup below) for them to work.
 - `/atlas-update` -- Compose and post a new status update to a project
 - `/atlas-my-updates` -- List status updates for projects you own or contribute to
 - `/atlas-tag` -- List projects filtered by a tag
+- `/atlas-setup` -- First-run setup: checks `uv`, creates `~/.atlas/config.json`, verifies the connection
 
 ## Install as a plugin (recommended for sharing)
 
@@ -49,6 +50,9 @@ Skills are then available namespaced as `/atlas:create`, `/atlas:projects`,
 ```bash
 /plugin marketplace update safetyculture-atlas
 ```
+
+Then run `/atlas:setup` — it checks the prerequisites below, walks you through
+creating your config file, and verifies the connection.
 
 Two per-user prerequisites still apply:
 
