@@ -1,0 +1,18 @@
+#!/bin/sh
+# Launch the atlas MCP server with uv.
+#
+# GUI apps (Claude Desktop, the Code tab of the desktop app) start MCP servers
+# with a minimal PATH that usually lacks Homebrew and ~/.local/bin, so a bare
+# `uv` command fails there. Look in the usual install locations before giving up.
+set -e
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PATH="$PATH:$HOME/.local/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin"
+export PATH
+
+if ! command -v uv >/dev/null 2>&1; then
+  echo "atlas-mcp: 'uv' not found. Install it: https://docs.astral.sh/uv/getting-started/installation/" >&2
+  exit 127
+fi
+
+exec uv run --quiet --directory "$ROOT" python -m atlas.server
