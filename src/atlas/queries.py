@@ -137,7 +137,11 @@ query ListProjects($first: Int, $containerId: String!) {
           }
         }
         tags {
-          name
+          edges {
+            node {
+              name
+            }
+          }
         }
       }
     }

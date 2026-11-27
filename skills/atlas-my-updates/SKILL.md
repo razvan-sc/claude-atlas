@@ -16,7 +16,7 @@ Use the `atlas` MCP server. All tool calls use the `mcp__atlas__` prefix.
 
 1. Call `mcp__atlas__list_projects` with `limit: 50` to get all active projects.
 
-2. Work out the current user's display name: call `mcp__atlas__atlas_graphql_query` with `query { me { user { name } } }` and read `data.me.user.name`. If that fails or returns nothing, ask the user for their name as it appears in Atlas.
+2. Work out the current user's display name: call `mcp__atlas__atlas_graphql_query` with `query Me { me { user { name } } }` (Atlas rejects unnamed operations) and read `data.me.user.name`. If that fails or returns nothing, ask the user for their name as it appears in Atlas.
 
 3. Parse the returned project JSON array. Filter for projects where:
    - The `owner` field matches the user's name

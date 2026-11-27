@@ -9,7 +9,7 @@
       "name": "atlas",
       "source": ".",
       "description": "Read, create, and update Atlassian Atlas projects from Claude — list, browse, create (with goal/tag/Jira links), and post status updates.",
-      "version": "0.2.0"
+      "version": "0.2.1"
     }
   ]
 }
