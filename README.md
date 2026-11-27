@@ -51,13 +51,9 @@ one step:
 /plugin install atlas@safetyculture-atlas
 ```
 
-Then run `/atlas:setup`. It checks `uv`, creates `~/.atlas/config.json`, and
-verifies the connection. Skills are namespaced as `/atlas:create`,
-`/atlas:projects`, `/atlas:status`, and so on. To pick up new versions:
-
-```bash
-/plugin marketplace update safetyculture-atlas
-```
+Restart Claude Code (or the desktop app), then run `/atlas:setup`. It checks
+`uv`, creates `~/.atlas/config.json`, and verifies the connection. Skills are
+namespaced as `/atlas:create`, `/atlas:projects`, `/atlas:status`, and so on.
 
 ### Claude Desktop: Cowork (plugin with skills)
 
@@ -66,6 +62,7 @@ verifies the connection. Skills are namespaced as `/atlas:create`,
 2. Install **atlas** from the `safetyculture-atlas` marketplace.
 3. Create `~/.atlas/config.json` (see [Config file](#config-file)), or ask Claude
    to run the `atlas-setup` skill.
+4. Start a new task and ask Claude to "list my Atlas projects" to check it works.
 
 ### Claude Desktop: Chat (one-click extension)
 
@@ -73,15 +70,47 @@ The chat app loads MCP servers as Desktop Extensions (`.mcpb`). The extension
 asks for your email, API token, and site in a settings form. The token is
 stored in the OS keychain, so no config file is needed.
 
-1. Download `atlas.mcpb` from the
-   [latest release](https://github.com/razvan-sc/claude-atlas/releases), or
-   build it yourself (see [Building the Desktop extension](#building-the-desktop-extension)).
-2. Double-click it, or drag it onto **Settings → Extensions** in Claude Desktop.
-3. Fill in the form and enable the extension.
+1. Download [`atlas.mcpb`](https://github.com/razvan-sc/claude-atlas/releases/latest/download/atlas.mcpb)
+   from the [latest release](https://github.com/razvan-sc/claude-atlas/releases/latest),
+   or build it yourself (see [Building the Desktop extension](#building-the-desktop-extension)).
+2. Double-click it, or drag it onto **Settings → Extensions** in Claude Desktop,
+   then click **Install**.
+3. Fill in the form:
+   - **Atlassian email**: the email you sign in to Atlassian with
+   - **Atlassian API token**: create one at
+     <https://id.atlassian.com/manage-profile/security/api-tokens>
+   - **Atlassian site**: the `yoursite` part of `yoursite.atlassian.net`
+   - **Cloud ID**: leave empty unless you know you need it
+4. Enable the extension, start a new chat, and ask "list my Atlas projects".
 
 The extension adds only the MCP tools. The chat app does not load plugin
 skills. If you want the slash-command workflows in chat too, zip a folder from
 `skills/` and upload it under **Settings → Capabilities → Skills**.
+
+## Updating
+
+| Where you installed it | How to update |
+|---|---|
+| Claude Code | `/plugin marketplace update safetyculture-atlas`, then restart |
+| Cowork | **Customize → Plugins** and update **atlas** (or turn on **Sync automatically** for the marketplace) |
+| Desktop chat | Download the latest [`atlas.mcpb`](https://github.com/razvan-sc/claude-atlas/releases/latest/download/atlas.mcpb) and open it. It replaces the installed version and should keep your settings |
+
+Releases and changes are listed on the
+[releases page](https://github.com/razvan-sc/claude-atlas/releases).
+
+## Troubleshooting
+
+- **`401 Unauthorized`**: Atlassian rejected the API token. It may be expired
+  or revoked, or it may not belong to the email you entered. Create a new token
+  and put it in `~/.atlas/config.json` (Claude Code and Cowork) or in
+  **Settings → Extensions → Atlassian Atlas** (Desktop chat).
+- **Atlas tools don't show up**: restart the app after installing or updating.
+  MCP servers only load when a session starts.
+- **Server fails to start**: check that `uv --version` works in a terminal.
+  The launcher looks in Homebrew, `~/.local/bin` and `~/.cargo/bin`. If `uv`
+  lives somewhere else, add that folder to the `PATH` the app starts with.
+- **Logs** (macOS): Claude Desktop writes the extension's log to
+  `~/Library/Logs/Claude/mcp-server-Atlassian Atlas.log`.
 
 ## Config file
 
