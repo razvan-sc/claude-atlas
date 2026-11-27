@@ -27,6 +27,29 @@ from atlas.queries import (
 mcp = FastMCP("atlas")
 
 
+def _to_adf(text: str) -> str:
+    """Wrap plain text as an ADF document string, one paragraph per blank-line block.
+
+    Atlas rejects plain strings in rich-text fields such as a project's "what".
+    Text that is already an ADF document is passed through unchanged.
+    """
+    try:
+        parsed = json.loads(text)
+    except ValueError:
+        parsed = None
+    if isinstance(parsed, dict) and parsed.get("type") == "doc":
+        return text
+    paragraphs = [block.strip() for block in text.split("\n\n") if block.strip()]
+    return json.dumps({
+        "version": 1,
+        "type": "doc",
+        "content": [
+            {"type": "paragraph", "content": [{"type": "text", "text": block}]}
+            for block in paragraphs
+        ],
+    })
+
+
 def _format_project(raw: dict[str, Any]) -> dict[str, Any]:
     """Flatten a raw GraphQL project response into a readable dict."""
     members = [
@@ -185,7 +208,7 @@ async def _create_project_impl(
             desc_payload = (
                 await client.execute(
                     SET_PROJECT_DESCRIPTION_MUTATION,
-                    {"input": {"id": project_id, "description": {"what": description}}},
+                    {"input": {"id": project_id, "description": {"what": _to_adf(description)}}},
                 )
             )["data"]["projects_edit"]
             if desc_payload.get("success"):
