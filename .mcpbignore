@@ -13,3 +13,4 @@ claude-desktop-instructions.txt
 .mcp.json
 **/__pycache__/
 *.pyc
+.pytest_cache/
