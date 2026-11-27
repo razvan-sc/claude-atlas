@@ -7,7 +7,7 @@ import pytest
 
 from atlas.config import AtlasConfig
 from atlas.graphql_client import AtlasGraphQLClient
-from atlas.server import _create_project_impl
+from atlas.server import _create_project_impl, _to_adf
 
 CONTAINER = "ari:cloud:townsquare::site/cloud-1"
 CLOUD_ID = "cloud-1"
@@ -113,7 +113,11 @@ class TestCreateProject:
         assert parsed["description"] == "Build the thing"
         edit_vars = router.variables_for("projects_edit")["input"]
         assert edit_vars["id"] == "ari:proj/1"
-        assert edit_vars["description"] == {"what": "Build the thing"}
+        assert json.loads(edit_vars["description"]["what"]) == {
+            "version": 1,
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Build the thing"}]}],
+        }
 
     @pytest.mark.asyncio
     async def test_create_with_all_options(self, config):
@@ -238,3 +242,13 @@ class TestCreateProject:
         assert parsed["created"] is True
         assert "goal" not in parsed
         assert any("goal not linked" in w for w in parsed["warnings"])
+
+
+class TestToAdf:
+    def test_splits_blank_lines_into_paragraphs(self):
+        doc = json.loads(_to_adf("First.\n\nSecond."))
+        assert [p["content"][0]["text"] for p in doc["content"]] == ["First.", "Second."]
+
+    def test_passes_existing_adf_through(self):
+        adf = json.dumps({"version": 1, "type": "doc", "content": []})
+        assert _to_adf(adf) == adf
