@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "atlas",
   "display_name": "Atlassian Atlas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read, create, and update Atlassian Atlas projects from Claude.",
   "long_description": "List and browse Atlas projects, create projects (with goal, tag and Jira links), read status updates and post new ones. Requires uv (https://docs.astral.sh/uv/) on this machine.",
   "author": {

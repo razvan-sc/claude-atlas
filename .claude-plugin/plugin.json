@@ -1,7 +1,7 @@
 {
   "name": "atlas",
   "displayName": "Atlassian Atlas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read, create, and update Atlassian Atlas projects from Claude — list, browse, create (with goal/tag/Jira links), and post status updates.",
   "author": {
     "name": "razvan-sc"
